@@ -1,17 +1,37 @@
 [theme]
-base = "dark"
+baseRadius = "10px"
+buttonRadius = "10px"
+baseFontSize = 16
+showWidgetBorder = true
+font = "Atkinson Hyperlegible Next:https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap"
+headingFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wdth,wght@50..125,100..900&display=swap"
+
+[theme.light]
+primaryColor = "#0b7493"
+backgroundColor = "#f6f7f9"
+secondaryBackgroundColor = "#eef1f6"
+textColor = "#0f172a"
+linkColor = "#0b7493"
+borderColor = "#d3d9e3"
+redColor = "#c4223a"
+greenColor = "#0b7f47"
+blueColor = "#2f7ad6"
+orangeColor = "#9a5a00"
+violetColor = "#6b55d9"
+chartCategoricalColors = ["#4292f4", "#e7672b", "#0b7493", "#9a5a00"]
+
+[theme.light.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#eef1f6"
+borderColor = "#e2e6ee"
+
+[theme.dark]
 primaryColor = "#2fd3f0"
 backgroundColor = "#060b16"
 secondaryBackgroundColor = "#111b30"
 textColor = "#eaf0fa"
 linkColor = "#2fd3f0"
 borderColor = "#24324f"
-showWidgetBorder = true
-baseRadius = "10px"
-buttonRadius = "10px"
-baseFontSize = 16
-font = "Atkinson Hyperlegible Next:https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap"
-headingFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wdth,wght@50..125,100..900&display=swap"
 redColor = "#ff5a6e"
 greenColor = "#2fe08f"
 blueColor = "#4292f4"
@@ -19,7 +39,7 @@ orangeColor = "#ffb648"
 violetColor = "#a08cff"
 chartCategoricalColors = ["#4292f4", "#e7672b", "#2fd3f0", "#ffb648"]
 
-[theme.sidebar]
+[theme.dark.sidebar]
 backgroundColor = "#08101e"
 secondaryBackgroundColor = "#111b30"
 borderColor = "#1e2b47"

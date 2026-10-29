@@ -15,7 +15,7 @@ entrenada con el dataset UCI Heart Disease (Cleveland, 303 pacientes).
 - `modelo/metadata.json`: métricas, umbrales, textos y enlaces que muestra la app.
 - `data/heart_clean.csv`: datos limpios con la marca de entrenamiento o prueba.
 - `data/plantilla_pacientes.csv`: ejemplo para la evaluación por lote.
-- `.streamlit/config.toml`: tema oscuro, colores y tipografías de la interfaz.
+- `.streamlit/config.toml`: temas claro y oscuro, colores y tipografías de la interfaz.
 
 ## Ejecutar en el computador
 

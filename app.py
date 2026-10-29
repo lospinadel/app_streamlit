@@ -32,26 +32,50 @@ RUTA_DATOS = BASE / "data" / "heart_clean.csv"
 RUTA_PLANTILLA = BASE / "data" / "plantilla_pacientes.csv"
 
 # ---------------------------------------------------------------------------
-# Paleta y tipografía (contraste verificado: todo texto >= 4,5:1 sobre PANEL)
+# Paleta y tipografía. Hay dos temas con los mismos significados de color:
+# claro (por defecto, como un trazo de ECG impreso) y oscuro (como la pantalla de
+# un monitor). El CSS usa light-dark(), así que cada pieza propia toma el valor
+# del tema que Streamlit tenga activo. Contraste verificado: texto >= 4,5:1.
 # ---------------------------------------------------------------------------
-PANTALLA = "#060b16"   # fondo de la página
-PANEL = "#0c1424"      # tarjetas y gráficos
-PANEL_2 = "#111b30"    # controles y superficies elevadas
-BORDE = "#1e2b47"
-BORDE_2 = "#2a3a5c"
-TINTA = "#eaf0fa"
-TINTA_2 = "#a9b6cc"
-TINTA_3 = "#8391a8"
-CIAN = "#2fd3f0"       # canal del modelo y acento de la interfaz
-VERDE = "#2fe08f"      # riesgo bajo (siempre con ícono y texto)
-ROJO = "#ff5a6e"       # riesgo alto (siempre con ícono y texto)
-AMBAR = "#ffb648"      # umbral de decisión
+TOKENS = {  # nombre: (tema claro, tema oscuro)
+    "pantalla": ("#f6f7f9", "#060b16"),
+    "panel": ("#ffffff", "#0c1424"),
+    "panel-2": ("#f1f4f8", "#111b30"),
+    "borde": ("#e2e6ee", "#1e2b47"),
+    "borde-2": ("#cdd4e0", "#2a3a5c"),
+    "tinta": ("#0f172a", "#eaf0fa"),
+    "tinta-2": ("#475066", "#a9b6cc"),
+    "tinta-3": ("#5d6880", "#8391a8"),
+    "cian": ("#0b7493", "#2fd3f0"),    # canal del modelo y acento de la interfaz
+    "verde": ("#0b7f47", "#2fe08f"),   # riesgo bajo (siempre con ícono y texto)
+    "rojo": ("#c4223a", "#ff5a6e"),    # riesgo alto (siempre con ícono y texto)
+    "ambar": ("#9a5a00", "#ffb648"),   # umbral de decisión
+    "traza": ("#111827", "#2fe08f"),   # trazo del ECG: tinta en papel / fósforo en pantalla
+    "hero": ("#fffbfb", "#0c1424"),    # papel milimetrado / vidrio del monitor
+    "cuadricula": ("rgba(214, 69, 69, .2)", "rgba(122, 146, 190, .07)"),
+    "cuadricula-fina": ("rgba(214, 69, 69, .09)", "rgba(0, 0, 0, 0)"),
+    "brillo-traza": ("rgba(0, 0, 0, 0)", "rgba(47, 224, 143, .55)"),
+    "brillo-umbral": ("rgba(0, 0, 0, 0)", "rgba(255, 182, 72, .6)"),
+}
+OSCURO = {nombre: valores[1] for nombre, valores in TOKENS.items()}
+
+# Colores con que se dibujan los gráficos de Plotly. Los de datos sirven en los dos
+# temas (contraste >= 3:1 sobre blanco y sobre el panel oscuro); los de texto, rejilla
+# y ejes se escriben con el valor oscuro y el CSS los cambia en el tema claro.
+PANEL, PANEL_2, BORDE, BORDE_2 = OSCURO["panel"], OSCURO["panel-2"], OSCURO["borde"], OSCURO["borde-2"]
+TINTA, TINTA_2, TINTA_3 = OSCURO["tinta"], OSCURO["tinta-2"], OSCURO["tinta-3"]
+AMBAR = OSCURO["ambar"]
 AZUL = "#4292f4"       # sin enfermedad / baja el riesgo
 NARANJA = "#e7672b"    # con enfermedad / sube el riesgo
 REJILLA = "#18233b"
-EJE = "#2a3a5c"
+EJE = BORDE_2
 GRIS_BARRA = "#33415e"
+TEXTO_CELDA = "#f8fafc"  # texto sobre celdas oscuras de los mapas de calor (igual en los dos temas)
 COLOR_DX = {"Sin enfermedad": AZUL, "Con enfermedad": NARANJA}
+GRAFICO_CLARO = {  # color oscuro con que se dibuja -> color en el tema claro
+    TINTA: "#0f172a", TINTA_2: "#475066", TINTA_3: "#5d6880", REJILLA: "#e6e9ef", EJE: "#c9d0dc",
+    GRIS_BARRA: "#b9c1ce", AMBAR: "#9a5a00", PANEL: "#ffffff", PANEL_2: "#ffffff", BORDE: "#e2e6ee",
+}
 FUENTE_CIFRAS = "Saira, 'Atkinson Hyperlegible Next', system-ui, sans-serif"
 
 st.set_page_config(
@@ -61,16 +85,16 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-RAIZ = f"""
-:root {{
-  --cr-pantalla: {PANTALLA}; --cr-panel: {PANEL}; --cr-panel-2: {PANEL_2};
-  --cr-borde: {BORDE}; --cr-borde-2: {BORDE_2};
-  --cr-tinta: {TINTA}; --cr-tinta-2: {TINTA_2}; --cr-tinta-3: {TINTA_3};
-  --cr-cian: {CIAN}; --cr-verde: {VERDE}; --cr-rojo: {ROJO}; --cr-ambar: {AMBAR};
-  --cr-cifras: {FUENTE_CIFRAS};
-  --cr-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-}}
-"""
+def _rgb(color_hex):
+    return "rgb({}, {}, {})".format(*(int(color_hex[i:i + 2], 16) for i in (1, 3, 5)))
+
+
+RAIZ = (":root {\n" + "\n".join(f"  --cr-{n}: light-dark({c}, {o});" for n, (c, o) in TOKENS.items())
+        + f"\n  --cr-cifras: {FUENTE_CIFRAS};\n  --cr-ease-out: cubic-bezier(0.23, 1, 0.32, 1);\n}}\n")
+# Plotly escribe los colores en línea (style="fill: rgb(...)"); estas reglas los cambian según el tema
+CSS_GRAFICOS = "\n".join(
+    f'.js-plotly-plot [style*="{prop}: {_rgb(oscuro)}"] {{{prop}: light-dark({claro}, {oscuro}) !important;}}'
+    for oscuro, claro in GRAFICO_CLARO.items() for prop in ("fill", "stroke"))
 
 CSS = """
 .block-container, [data-testid="stMainBlockContainer"] {max-width: 1240px; padding-top: 4.2rem; padding-bottom: 3rem;}
@@ -78,11 +102,13 @@ CSS = """
 
 /* Encabezado: marca, trazo de ECG y canales del monitor */
 section.cr-hero {position: relative; padding: 22px 28px 20px; border: 1px solid var(--cr-borde);
-  border-radius: 18px; background: var(--cr-panel); overflow: hidden; margin: 0;}
+  border-radius: 18px; background: var(--cr-hero); overflow: hidden; margin: 0;}
 section.cr-hero::before {content: ""; position: absolute; inset: 0; pointer-events: none;
-  background-image: linear-gradient(rgba(122,146,190,.06) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(122,146,190,.06) 1px, transparent 1px);
-  background-size: 24px 24px;}
+  background-image: linear-gradient(var(--cr-cuadricula) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--cr-cuadricula) 1px, transparent 1px),
+                    linear-gradient(var(--cr-cuadricula-fina) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--cr-cuadricula-fina) 1px, transparent 1px);
+  background-size: 30px 30px, 30px 30px, 6px 6px, 6px 6px;}
 section.cr-hero > * {position: relative;}
 section.cr-hero ul.cr-chips {display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0 0 12px; padding: 0;}
 section.cr-hero ul.cr-chips li {margin: 0; padding: 5px 11px; font-size: .84rem; line-height: 1.2; color: var(--cr-tinta-2);
@@ -92,10 +118,10 @@ section.cr-hero div.cr-marca {font-family: var(--cr-cifras); font-weight: 700; f
   font-variation-settings: "wdth" 125; font-size: clamp(2.5rem, 3.2vw + 1.2rem, 4rem); line-height: 1;
   letter-spacing: -0.01em; color: var(--cr-tinta); margin: 0; padding: 0;}
 section.cr-hero svg.cr-ecg {display: block; width: 100%; height: auto; margin: 6px 0 4px; overflow: visible;}
-section.cr-hero .cr-traza {fill: none; stroke: var(--cr-verde); stroke-width: 2.6; stroke-linecap: round;
-  stroke-linejoin: round; filter: drop-shadow(0 0 5px rgba(47,224,143,.55));}
-section.cr-hero .cr-punto {fill: var(--cr-verde);}
-section.cr-hero .cr-onda {fill: none; stroke: var(--cr-verde); stroke-width: 1.6; transform-box: fill-box;
+section.cr-hero .cr-traza {fill: none; stroke: var(--cr-traza); stroke-width: 2.6; stroke-linecap: round;
+  stroke-linejoin: round; filter: drop-shadow(0 0 5px var(--cr-brillo-traza));}
+section.cr-hero .cr-punto {fill: var(--cr-traza);}
+section.cr-hero .cr-onda {fill: none; stroke: var(--cr-traza); stroke-width: 1.6; transform-box: fill-box;
   transform-origin: center; animation: cr-latido 1.1s var(--cr-ease-out) infinite;}
 section.cr-hero p.cr-lema {color: var(--cr-tinta-2); font-size: 1.04rem; line-height: 1.55; max-width: 68ch; margin: 0;}
 
@@ -121,7 +147,7 @@ div.cr-canales .cr-canal::before {content: ""; position: absolute; left: 0; righ
 div.cr-canales .cr-canal-nombre {font-size: .88rem; line-height: 1.3; color: var(--cr-tinta-2); align-self: start;}
 div.cr-canales .cr-canal-valor {font-family: var(--cr-cifras); font-weight: 600; font-size: 2.15rem; line-height: 1.1;
   color: var(--canal); font-variant-numeric: tabular-nums; white-space: nowrap; align-self: end;
-  text-shadow: 0 0 18px color-mix(in srgb, var(--canal) 35%, transparent);}
+  text-shadow: 0 0 18px light-dark(rgba(0, 0, 0, 0), color-mix(in srgb, var(--canal) 35%, transparent));}
 div.cr-canales .cr-canal-nota {font-size: .8rem; line-height: 1.35; color: var(--cr-tinta-3);}
 div.cr-canales .cr-c-datos {--canal: var(--cr-tinta);}
 div.cr-canales .cr-c-modelo {--canal: var(--cr-cian);}
@@ -152,7 +178,7 @@ div.cr-lectura .cr-criterio {font-size: .82rem; color: var(--cr-tinta); padding:
   border: 1px solid var(--cr-borde-2); background: var(--cr-panel-2); white-space: nowrap;}
 div.cr-lectura .cr-lectura-valor {font-family: var(--cr-cifras); font-weight: 600; font-size: clamp(4rem, 5vw + 1.4rem, 5.6rem);
   line-height: 1; margin: 14px 0 12px; color: var(--estado); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
-  text-shadow: 0 0 28px color-mix(in srgb, var(--estado) 40%, transparent);}
+  text-shadow: 0 0 28px light-dark(rgba(0, 0, 0, 0), color-mix(in srgb, var(--estado) 40%, transparent));}
 div.cr-lectura .cr-unidad {font-size: .4em; font-weight: 500; margin-left: .14em; color: var(--cr-tinta-2); text-shadow: none;}
 div.cr-lectura .cr-estado {display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
   font-size: .98rem; line-height: 1.4; color: var(--cr-tinta); background: color-mix(in srgb, var(--estado) 10%, transparent);
@@ -161,9 +187,10 @@ div.cr-lectura .cr-estado svg {flex: none; color: var(--estado);}
 div.cr-lectura .cr-barra {position: relative; display: flex; gap: 3px; margin: 20px 0 6px;}
 div.cr-lectura .cr-seg {flex: 1; height: 14px; border-radius: 3px; background: var(--cr-panel-2);
   box-shadow: inset 0 0 0 1px var(--cr-borde);}
-div.cr-lectura .cr-seg.on {background: var(--estado); box-shadow: 0 0 8px color-mix(in srgb, var(--estado) 45%, transparent);}
+div.cr-lectura .cr-seg.on {background: var(--estado);
+  box-shadow: 0 0 8px light-dark(rgba(0, 0, 0, 0), color-mix(in srgb, var(--estado) 45%, transparent));}
 div.cr-lectura .cr-umbral {position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; border-radius: 2px;
-  background: var(--cr-ambar); box-shadow: 0 0 6px rgba(255,182,72,.6);}
+  background: var(--cr-ambar); box-shadow: 0 0 6px var(--cr-brillo-umbral);}
 div.cr-lectura .cr-escala {position: relative; height: 20px; font-size: .8rem; color: var(--cr-tinta-3);}
 div.cr-lectura .cr-escala span {position: absolute; top: 0; white-space: nowrap;}
 div.cr-lectura .cr-escala .cr-e-umbral {color: var(--cr-ambar); transform: translateX(-50%);}
@@ -214,6 +241,11 @@ div.cr-side p.cr-side-aviso {margin-top: 20px; padding: 10px 12px; border-radius
 /* Gráficos dentro de una tarjeta */
 [data-testid="stPlotlyChart"] {background: var(--cr-panel); border: 1px solid var(--cr-borde); border-radius: 14px; overflow: hidden;}
 
+/* El selector de tema del menú se oculta para que el interruptor sea el único control
+   (la app lo usa por dentro para cambiar de tema) */
+[data-testid="stThemeSwitcher"],
+[data-testid="stThemeSwitcher"] + [data-testid="stMainMenuDivider"] {display: none !important;}
+
 /* Pestañas */
 [data-testid="stTabs"] [data-baseweb="tab-list"] {gap: 4px;}
 [data-testid="stTabs"] button[data-baseweb="tab"] p {font-size: 1rem; font-weight: 600;}
@@ -238,7 +270,7 @@ div.cr-side p.cr-side-aviso {margin-top: 20px; padding: 10px 12px; border-radius
 }
 """
 
-st.html(f"<style>{RAIZ}{CSS}</style>")
+st.html(f"<style>{RAIZ}{CSS}{CSS_GRAFICOS}</style>")
 
 # Íconos (SVG propios, trazo de 2 px; decorativos junto a texto visible)
 ICONO_ALERTA = ('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" '
@@ -485,6 +517,12 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 # Encabezado: marca, trazo de ECG y canales del monitor
 # ---------------------------------------------------------------------------
+# Tema: claro por defecto. El interruptor queda enlazado a la URL (?oscuro=true), así que
+# el modo elegido se mantiene al recargar o al compartir el enlace.
+with st.container(horizontal_alignment="right"):
+    MODO_OSCURO = st.toggle(":material/dark_mode: Modo oscuro", key="oscuro", bind="query-params",
+                            help="Cambia entre el tema claro (por defecto) y el oscuro.")
+
 primera_vez = not st.session_state.get("_intro_vista", False)
 st.session_state["_intro_vista"] = True
 mt = PRUEBA["metricas"]["tamizaje"]
@@ -745,9 +783,9 @@ with tab_datos:
             nombres = [INFO[c]["etiqueta_corta"] if c in INFO else "Enfermedad" for c in cols_corr]
             fig = go.Figure(go.Heatmap(
                 z=corr.values, x=nombres, y=nombres, zmin=-1, zmax=1,
-                colorscale=[[0, "#2a62ad"], [0.5, "#222c42"], [1, "#b04d1b"]],
+                colorscale=[[0, "#2a62ad"], [0.5, "#5f6b7f"], [1, "#b04d1b"]],
                 text=[[num(round(v, 2) + 0.0, 2) for v in fila] for fila in corr.values], texttemplate="%{text}",
-                textfont=dict(size=11, color=TINTA), xgap=2, ygap=2,
+                textfont=dict(size=11, color=TEXTO_CELDA), xgap=2, ygap=2,
                 hovertemplate="%{y} · %{x}<br>r = %{z:.2f}<extra></extra>",
                 colorbar=dict(thickness=10, outlinewidth=0, tickfont=dict(color=TINTA_3))))
             estilo(fig, alto=370, leyenda=False, titulo="Correlación entre variables numéricas")
@@ -804,8 +842,8 @@ with tab_modelo:
         fig = go.Figure(go.Heatmap(
             z=z, x=["Predicho: sin enfermedad", "Predicho: con enfermedad"],
             y=["Real: sin enfermedad", "Real: con enfermedad"],
-            colorscale=[[0, "#14223d"], [1, "#2c64b0"]], showscale=False,
-            text=textos, texttemplate="%{text}", textfont=dict(size=14, color=TINTA),
+            colorscale=[[0, "#334a6b"], [1, "#2f6fd0"]], showscale=False,
+            text=textos, texttemplate="%{text}", textfont=dict(size=14, color=TEXTO_CELDA),
             hovertemplate="%{y} · %{x}: %{z}<extra></extra>", xgap=4, ygap=4))
         estilo(fig, alto=370, leyenda=False, titulo=f"Matriz de confusión (umbral {pct(umbral_sel, 0)})")
         fig.update_yaxes(autorange="reversed", showgrid=False, linecolor="rgba(0,0,0,0)")
@@ -909,7 +947,7 @@ with tab_lote:
         c1, c2 = st.columns([1, 2], gap="large")
         c1.download_button("Descargar plantilla CSV", plantilla.to_csv(index=False).encode("utf-8"),
                            "plantilla_pacientes.csv", "text/csv", width="stretch", icon=":material/download:")
-        usar_plantilla = c1.toggle("Probar con la plantilla de ejemplo")
+        usar_plantilla = c1.toggle("Probar con la plantilla de ejemplo", key="usar_plantilla")
         archivo = c2.file_uploader("Subir archivo CSV", type=["csv"])
 
     with st.expander("Códigos de cada columna"):
@@ -1015,3 +1053,56 @@ with tab_acerca:
                             ("Repositorio", enlaces.get("repositorio"))]:
             st.markdown(f"- {nombre}: {url if url else 'pendiente'}")
         aviso("Proyecto académico. El modelo no está validado para uso clínico.")
+
+# ---------------------------------------------------------------------------
+# Puente con el tema de Streamlit. Streamlit guarda el tema activo en el navegador;
+# este script lo cambia con el selector del menú principal (oculto por CSS), sin
+# recargar la página, y deja guardado el tema claro para la próxima visita. Si el
+# menú no está disponible (por ejemplo, con ?embed=true), guarda el tema y recarga.
+# ---------------------------------------------------------------------------
+PUENTE_TEMA = """
+<span hidden></span>
+<script>
+(async () => {
+  const quiero = "__MODO__";
+  const clave = "stActiveTheme-" + window.location.pathname + "-v2";
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const actual = () => {
+    const app = document.querySelector('[data-testid="stApp"]');
+    return app && getComputedStyle(app).colorScheme.includes("dark") ? "oscuro" : "claro";
+  };
+  const recordarClaro = () => { try { localStorage.setItem(clave, JSON.stringify("Light")); } catch (e) {} };
+  if (actual() === quiero) { recordarClaro(); sessionStorage.removeItem("crTemaRecarga"); return; }
+  const destino = quiero === "oscuro" ? "Dark" : "Light";
+  const velo = document.createElement("style");
+  velo.textContent = '[data-testid="stMainMenuPopover"]{opacity:0 !important;pointer-events:none !important}';
+  document.head.appendChild(velo);
+  let listo = false;
+  try {
+    const boton = document.querySelector('[data-testid="stMainMenuButton"]');
+    if (boton) {
+      boton.click();
+      let item = null;
+      for (let i = 0; i < 40 && !item; i++) {
+        await espera(25);
+        item = document.querySelector('[data-testid="stMainMenuItem-theme-' + destino + '"]');
+      }
+      if (item) { item.click(); listo = true; }
+      await espera(80);
+      if (document.querySelector('[data-testid="stMainMenuPopover"]')) { boton.click(); }
+    }
+  } catch (e) { listo = false; }
+  await espera(120);
+  velo.remove();
+  if (!listo || actual() !== quiero) {
+    if (sessionStorage.getItem("crTemaRecarga")) { return; }  // una sola recarga, nunca en bucle
+    try { localStorage.setItem(clave, JSON.stringify(destino)); sessionStorage.setItem("crTemaRecarga", "1"); } catch (e) { return; }
+    window.location.reload();
+    return;
+  }
+  sessionStorage.removeItem("crTemaRecarga");
+  recordarClaro();
+})();
+</script>
+"""
+st.html(PUENTE_TEMA.replace("__MODO__", "oscuro" if MODO_OSCURO else "claro"), unsafe_allow_javascript=True)
