@@ -1,0 +1,1414 @@
+{
+ "proyecto": {
+  "titulo": "CardioRiesgo: predicción de enfermedad coronaria con Machine Learning clásico",
+  "objetivo": "Estimar el riesgo de enfermedad coronaria a partir de 13 variables clínicas y ponerlo al alcance de un usuario final en una aplicación interactiva.",
+  "pregunta": "¿Qué tan bien puede un modelo clásico, construido con 13 variables clínicas y datos de 303 pacientes, identificar a quienes tienen enfermedad coronaria, y cómo ponerlo al alcance de un usuario final en una aplicación interactiva?",
+  "integrantes": [
+   "Daimer Cardona Rojas",
+   "Cristhian Eduardo Cortes Martha",
+   "Juan Manuel Guerrero Tupaz",
+   "Luis Alberto Ospina Delgado",
+   "Jhonny Mauricio Rosero Carpio"
+  ],
+  "docente": "Dr. Hamilton Rivera Flor",
+  "enlaces": {
+   "app": "https://cardioriesgo-aca1-g13.streamlit.app",
+   "video": "",
+   "repositorio": ""
+  },
+  "referencias": [
+   "Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J., Sandhu, S., Guppy, K., Lee, S., & Froelicher, V. (1989). International application of a new probability algorithm for the diagnosis of coronary artery disease. *The American Journal of Cardiology, 64*(5), 304–310. https://doi.org/10.1016/0002-9149(89)90524-9",
+   "Janosi, A., Steinbrunn, W., Pfisterer, M., & Detrano, R. (1988). *Heart disease* [Conjunto de datos]. UCI Machine Learning Repository. https://doi.org/10.24432/C52P4X",
+   "Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*, 2825–2830. https://jmlr.org/papers/v12/pedregosa11a.html"
+  ]
+ },
+ "dataset": {
+  "nombre": "UCI Heart Disease (Cleveland)",
+  "fuente": "copia espejo en GitHub de processed.cleveland.data (UCI)",
+  "url": "https://archive.ics.uci.edu/dataset/45/heart+disease",
+  "n_pacientes": 303,
+  "n_entrenamiento": 242,
+  "n_prueba": 61,
+  "prevalencia": 0.45874587458745875
+ },
+ "variables": {
+  "age": {
+   "etiqueta": "Edad",
+   "etiqueta_corta": "Edad",
+   "unidad": "años",
+   "tipo": "numerica",
+   "rango_entrada": [
+    20,
+    90
+   ],
+   "ayuda": "Edad del paciente en años."
+  },
+  "sex": {
+   "etiqueta": "Sexo",
+   "etiqueta_corta": "Sexo",
+   "tipo": "binaria",
+   "opciones": {
+    "0": "Mujer",
+    "1": "Hombre"
+   }
+  },
+  "cp": {
+   "etiqueta": "Tipo de dolor torácico",
+   "etiqueta_corta": "Dolor torácico",
+   "tipo": "categorica",
+   "opciones": {
+    "1": "Angina típica",
+    "2": "Angina atípica",
+    "3": "Dolor no anginoso",
+    "4": "Asintomático"
+   },
+   "ayuda": "Clasificación del dolor en el pecho que reporta el paciente."
+  },
+  "trestbps": {
+   "etiqueta": "Presión arterial en reposo",
+   "etiqueta_corta": "Presión en reposo",
+   "unidad": "mm Hg",
+   "tipo": "numerica",
+   "rango_entrada": [
+    80,
+    220
+   ],
+   "ayuda": "Presión sistólica al ingreso."
+  },
+  "chol": {
+   "etiqueta": "Colesterol sérico",
+   "etiqueta_corta": "Colesterol",
+   "unidad": "mg/dl",
+   "tipo": "numerica",
+   "rango_entrada": [
+    100,
+    600
+   ]
+  },
+  "fbs": {
+   "etiqueta": "Glucemia en ayunas > 120 mg/dl",
+   "etiqueta_corta": "Glucemia > 120",
+   "tipo": "binaria",
+   "opciones": {
+    "0": "No",
+    "1": "Sí"
+   }
+  },
+  "restecg": {
+   "etiqueta": "Electrocardiograma en reposo",
+   "etiqueta_corta": "ECG en reposo",
+   "tipo": "categorica",
+   "opciones": {
+    "0": "Normal",
+    "1": "Anomalía de la onda ST-T",
+    "2": "Hipertrofia ventricular izquierda"
+   }
+  },
+  "thalach": {
+   "etiqueta": "Frecuencia cardiaca máxima",
+   "etiqueta_corta": "FC máxima",
+   "unidad": "lpm",
+   "tipo": "numerica",
+   "rango_entrada": [
+    60,
+    220
+   ],
+   "ayuda": "Frecuencia máxima alcanzada en la prueba de esfuerzo."
+  },
+  "exang": {
+   "etiqueta": "Angina inducida por ejercicio",
+   "etiqueta_corta": "Angina por ejercicio",
+   "tipo": "binaria",
+   "opciones": {
+    "0": "No",
+    "1": "Sí"
+   }
+  },
+  "oldpeak": {
+   "etiqueta": "Depresión del ST por ejercicio",
+   "etiqueta_corta": "Depresión del ST",
+   "unidad": "mm",
+   "tipo": "numerica",
+   "rango_entrada": [
+    0.0,
+    7.0
+   ],
+   "ayuda": "Descenso del segmento ST durante el ejercicio, comparado con el reposo."
+  },
+  "slope": {
+   "etiqueta": "Pendiente del segmento ST",
+   "etiqueta_corta": "Pendiente ST",
+   "tipo": "categorica",
+   "opciones": {
+    "1": "Ascendente",
+    "2": "Plana",
+    "3": "Descendente"
+   }
+  },
+  "ca": {
+   "etiqueta": "Vasos principales coloreados (fluoroscopia)",
+   "etiqueta_corta": "Vasos coloreados",
+   "tipo": "categorica",
+   "opciones": {
+    "0": "0",
+    "1": "1",
+    "2": "2",
+    "3": "3"
+   }
+  },
+  "thal": {
+   "etiqueta": "Gammagrafía con talio",
+   "etiqueta_corta": "Talio",
+   "tipo": "categorica",
+   "opciones": {
+    "3": "Normal",
+    "6": "Defecto fijo",
+    "7": "Defecto reversible"
+   }
+  }
+ },
+ "grupos_variables": {
+  "numericas": [
+   "age",
+   "trestbps",
+   "chol",
+   "thalach",
+   "oldpeak",
+   "ca"
+  ],
+  "binarias": [
+   "sex",
+   "fbs",
+   "exang"
+  ],
+  "categoricas": [
+   "cp",
+   "restecg",
+   "slope",
+   "thal"
+  ]
+ },
+ "orden_variables": [
+  "age",
+  "trestbps",
+  "chol",
+  "thalach",
+  "oldpeak",
+  "ca",
+  "sex",
+  "fbs",
+  "exang",
+  "cp",
+  "restecg",
+  "slope",
+  "thal"
+ ],
+ "modelo": {
+  "nombre": "Regresión logística",
+  "hiperparametros": {
+   "C": 0.1,
+   "max_iter": 5000
+  },
+  "auc_cv": 0.9014624505928853,
+  "metricas_cv": {
+   "roc_auc": 0.9014624505928853,
+   "accuracy": 0.8355102040816326,
+   "recall": 0.7706719367588932,
+   "precision": 0.8626592989368059,
+   "f1": 0.811091063650515
+  }
+ },
+ "umbrales": {
+  "tamizaje": {
+   "valor": 0.29,
+   "nombre": "Tamizaje",
+   "sensibilidad_cv": 0.9099099099099099,
+   "especificidad_cv": 0.6412213740458015
+  },
+  "balanceado": {
+   "valor": 0.5,
+   "nombre": "Estándar",
+   "sensibilidad_cv": 0.7657657657657657,
+   "especificidad_cv": 0.9083969465648855
+  }
+ },
+ "comparacion_cv": [
+  {
+   "modelo": "Regresión logística",
+   "roc_auc": 0.8943307095481009,
+   "roc_auc_sd": 0.044145148302484484,
+   "accuracy": 0.8255612244897957,
+   "recall": 0.7635573122529645,
+   "precision": 0.8482537024155008,
+   "f1": 0.8002432342341934
+  },
+  {
+   "modelo": "Random Forest",
+   "roc_auc": 0.8854278571669876,
+   "roc_auc_sd": 0.04489711495844563,
+   "accuracy": 0.8007482993197279,
+   "recall": 0.7471146245059289,
+   "precision": 0.8099561431449304,
+   "f1": 0.7739215839729309
+  },
+  {
+   "modelo": "SVM (RBF)",
+   "roc_auc": 0.8811573933313064,
+   "roc_auc_sd": 0.04378126472208354,
+   "accuracy": 0.8231122448979592,
+   "recall": 0.7598418972332016,
+   "precision": 0.8452058949784754,
+   "f1": 0.7970523260307495
+  },
+  {
+   "modelo": "KNN",
+   "roc_auc": 0.8749941443419705,
+   "roc_auc_sd": 0.03828602658156948,
+   "accuracy": 0.815578231292517,
+   "recall": 0.7850592885375494,
+   "precision": 0.8123429174286625,
+   "f1": 0.7954019165038971
+  },
+  {
+   "modelo": "XGBoost",
+   "roc_auc": 0.8636751010664053,
+   "roc_auc_sd": 0.04203224292396177,
+   "accuracy": 0.7842006802721088,
+   "recall": 0.7577865612648221,
+   "precision": 0.7741983658295409,
+   "f1": 0.7615538062580843
+  },
+  {
+   "modelo": "Naive Bayes",
+   "roc_auc": 0.860306352262874,
+   "roc_auc_sd": 0.06168052327022076,
+   "accuracy": 0.7109693877551021,
+   "recall": 0.8788932806324111,
+   "precision": 0.6547332005486208,
+   "f1": 0.7416319439836873
+  },
+  {
+   "modelo": "Árbol de decisión",
+   "roc_auc": 0.7210561580126797,
+   "roc_auc_sd": 0.042793853078514715,
+   "accuracy": 0.7229931972789114,
+   "recall": 0.7020553359683794,
+   "precision": 0.6969646346195546,
+   "f1": 0.6962545144206203
+  }
+ ],
+ "ajuste": [
+  {
+   "modelo": "Regresión logística",
+   "auc": 0.9014624505928853,
+   "desv": 0.039817653501479235,
+   "hiperparametros": {
+    "C": 0.1
+   }
+  },
+  {
+   "modelo": "SVM (RBF)",
+   "auc": 0.8977425312207922,
+   "desv": 0.041338541017421924,
+   "hiperparametros": {
+    "C": 1,
+    "gamma": 0.01
+   }
+  },
+  {
+   "modelo": "Random Forest",
+   "auc": 0.895880206749772,
+   "desv": 0.04148169533489076,
+   "hiperparametros": {
+    "max_depth": 5,
+    "min_samples_leaf": 5
+   }
+  }
+ ],
+ "prueba": {
+  "y_true": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   0,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   0,
+   0,
+   1
+  ],
+  "y_proba": [
+   0.210494,
+   0.608746,
+   0.099977,
+   0.097921,
+   0.386889,
+   0.1085,
+   0.224904,
+   0.35553,
+   0.608586,
+   0.383752,
+   0.849394,
+   0.120185,
+   0.081788,
+   0.93335,
+   0.857517,
+   0.948991,
+   0.762889,
+   0.531586,
+   0.741524,
+   0.890568,
+   0.578213,
+   0.102858,
+   0.817169,
+   0.551877,
+   0.748086,
+   0.115917,
+   0.141653,
+   0.909621,
+   0.168208,
+   0.862703,
+   0.367417,
+   0.923668,
+   0.585594,
+   0.45094,
+   0.172438,
+   0.801561,
+   0.249686,
+   0.333298,
+   0.089534,
+   0.627656,
+   0.908569,
+   0.983232,
+   0.938991,
+   0.895691,
+   0.217301,
+   0.129439,
+   0.849832,
+   0.110446,
+   0.975333,
+   0.196086,
+   0.086931,
+   0.924313,
+   0.425525,
+   0.11532,
+   0.416881,
+   0.865176,
+   0.953301,
+   0.689158,
+   0.067297,
+   0.100281,
+   0.959676
+  ],
+  "auc": 0.9610389610389611,
+  "roc": {
+   "fpr": [
+    0.0,
+    0.0,
+    0.0,
+    0.030303030303030304,
+    0.030303030303030304,
+    0.06060606060606061,
+    0.06060606060606061,
+    0.21212121212121213,
+    0.21212121212121213,
+    0.3333333333333333,
+    0.3333333333333333,
+    1.0
+   ],
+   "tpr": [
+    0.0,
+    0.03571428571428571,
+    0.35714285714285715,
+    0.35714285714285715,
+    0.8571428571428571,
+    0.8571428571428571,
+    0.9285714285714286,
+    0.9285714285714286,
+    0.9642857142857143,
+    0.9642857142857143,
+    1.0,
+    1.0
+   ]
+  },
+  "ic95": {
+   "auc": [
+    0.9053726544381193,
+    0.9978494623655914
+   ],
+   "exactitud": [
+    0.8032786885245902,
+    0.9508196721311475
+   ],
+   "sensibilidad": [
+    0.8148148148148148,
+    1.0
+   ],
+   "especificidad": [
+    0.7142857142857143,
+    0.9629960317460315
+   ]
+  },
+  "metricas": {
+   "balanceado": {
+    "umbral": 0.5,
+    "exactitud": 0.8852459016393442,
+    "sensibilidad": 0.9285714285714286,
+    "especificidad": 0.8484848484848485,
+    "precision": 0.8387096774193549,
+    "f1": 0.8813559322033898,
+    "VP": 26.0,
+    "VN": 28.0,
+    "FP": 5.0,
+    "FN": 2.0
+   },
+   "tamizaje": {
+    "umbral": 0.29,
+    "exactitud": 0.819672131147541,
+    "sensibilidad": 1.0,
+    "especificidad": 0.6666666666666666,
+    "precision": 0.717948717948718,
+    "f1": 0.835820895522388,
+    "VP": 28.0,
+    "VN": 22.0,
+    "FP": 11.0,
+    "FN": 0.0
+   }
+  }
+ },
+ "umbral_cv": [
+  {
+   "umbral": 0.05,
+   "sensibilidad": 1.0,
+   "especificidad": 0.007633587786259542
+  },
+  {
+   "umbral": 0.06,
+   "sensibilidad": 1.0,
+   "especificidad": 0.030534351145038167
+  },
+  {
+   "umbral": 0.07,
+   "sensibilidad": 1.0,
+   "especificidad": 0.03816793893129771
+  },
+  {
+   "umbral": 0.08,
+   "sensibilidad": 1.0,
+   "especificidad": 0.07633587786259542
+  },
+  {
+   "umbral": 0.09,
+   "sensibilidad": 0.990990990990991,
+   "especificidad": 0.1297709923664122
+  },
+  {
+   "umbral": 0.1,
+   "sensibilidad": 0.990990990990991,
+   "especificidad": 0.15267175572519084
+  },
+  {
+   "umbral": 0.11,
+   "sensibilidad": 0.9819819819819819,
+   "especificidad": 0.19083969465648856
+  },
+  {
+   "umbral": 0.12,
+   "sensibilidad": 0.9819819819819819,
+   "especificidad": 0.22900763358778625
+  },
+  {
+   "umbral": 0.13,
+   "sensibilidad": 0.9819819819819819,
+   "especificidad": 0.29770992366412213
+  },
+  {
+   "umbral": 0.14,
+   "sensibilidad": 0.9819819819819819,
+   "especificidad": 0.33587786259541985
+  },
+  {
+   "umbral": 0.15,
+   "sensibilidad": 0.9819819819819819,
+   "especificidad": 0.35877862595419846
+  },
+  {
+   "umbral": 0.16,
+   "sensibilidad": 0.972972972972973,
+   "especificidad": 0.4122137404580153
+  },
+  {
+   "umbral": 0.17,
+   "sensibilidad": 0.972972972972973,
+   "especificidad": 0.42748091603053434
+  },
+  {
+   "umbral": 0.18,
+   "sensibilidad": 0.972972972972973,
+   "especificidad": 0.42748091603053434
+  },
+  {
+   "umbral": 0.19,
+   "sensibilidad": 0.963963963963964,
+   "especificidad": 0.4580152671755725
+  },
+  {
+   "umbral": 0.2,
+   "sensibilidad": 0.963963963963964,
+   "especificidad": 0.4732824427480916
+  },
+  {
+   "umbral": 0.21,
+   "sensibilidad": 0.963963963963964,
+   "especificidad": 0.48854961832061067
+  },
+  {
+   "umbral": 0.22,
+   "sensibilidad": 0.963963963963964,
+   "especificidad": 0.4961832061068702
+  },
+  {
+   "umbral": 0.23,
+   "sensibilidad": 0.9459459459459459,
+   "especificidad": 0.5267175572519084
+  },
+  {
+   "umbral": 0.24,
+   "sensibilidad": 0.9459459459459459,
+   "especificidad": 0.5419847328244275
+  },
+  {
+   "umbral": 0.25,
+   "sensibilidad": 0.9459459459459459,
+   "especificidad": 0.5572519083969466
+  },
+  {
+   "umbral": 0.26,
+   "sensibilidad": 0.9459459459459459,
+   "especificidad": 0.5648854961832062
+  },
+  {
+   "umbral": 0.27,
+   "sensibilidad": 0.9459459459459459,
+   "especificidad": 0.5877862595419847
+  },
+  {
+   "umbral": 0.28,
+   "sensibilidad": 0.918918918918919,
+   "especificidad": 0.6259541984732825
+  },
+  {
+   "umbral": 0.29,
+   "sensibilidad": 0.9099099099099099,
+   "especificidad": 0.6412213740458015
+  },
+  {
+   "umbral": 0.3,
+   "sensibilidad": 0.8918918918918919,
+   "especificidad": 0.648854961832061
+  },
+  {
+   "umbral": 0.31,
+   "sensibilidad": 0.8828828828828829,
+   "especificidad": 0.6717557251908397
+  },
+  {
+   "umbral": 0.32,
+   "sensibilidad": 0.8828828828828829,
+   "especificidad": 0.6793893129770993
+  },
+  {
+   "umbral": 0.33,
+   "sensibilidad": 0.8738738738738738,
+   "especificidad": 0.7022900763358778
+  },
+  {
+   "umbral": 0.34,
+   "sensibilidad": 0.8738738738738738,
+   "especificidad": 0.7251908396946565
+  },
+  {
+   "umbral": 0.35,
+   "sensibilidad": 0.8648648648648649,
+   "especificidad": 0.7404580152671756
+  },
+  {
+   "umbral": 0.36,
+   "sensibilidad": 0.8648648648648649,
+   "especificidad": 0.7557251908396947
+  },
+  {
+   "umbral": 0.37,
+   "sensibilidad": 0.8468468468468469,
+   "especificidad": 0.7633587786259542
+  },
+  {
+   "umbral": 0.38,
+   "sensibilidad": 0.8378378378378378,
+   "especificidad": 0.7786259541984732
+  },
+  {
+   "umbral": 0.39,
+   "sensibilidad": 0.8288288288288288,
+   "especificidad": 0.7938931297709924
+  },
+  {
+   "umbral": 0.4,
+   "sensibilidad": 0.8108108108108109,
+   "especificidad": 0.8091603053435115
+  },
+  {
+   "umbral": 0.41,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.816793893129771
+  },
+  {
+   "umbral": 0.42,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.8244274809160306
+  },
+  {
+   "umbral": 0.43,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.8320610687022901
+  },
+  {
+   "umbral": 0.44,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.8396946564885496
+  },
+  {
+   "umbral": 0.45,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.8396946564885496
+  },
+  {
+   "umbral": 0.46,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.8396946564885496
+  },
+  {
+   "umbral": 0.47,
+   "sensibilidad": 0.8018018018018018,
+   "especificidad": 0.8549618320610687
+  },
+  {
+   "umbral": 0.48,
+   "sensibilidad": 0.7747747747747747,
+   "especificidad": 0.8778625954198473
+  },
+  {
+   "umbral": 0.49,
+   "sensibilidad": 0.7657657657657657,
+   "especificidad": 0.8854961832061069
+  },
+  {
+   "umbral": 0.5,
+   "sensibilidad": 0.7657657657657657,
+   "especificidad": 0.9083969465648855
+  },
+  {
+   "umbral": 0.51,
+   "sensibilidad": 0.7657657657657657,
+   "especificidad": 0.9236641221374046
+  },
+  {
+   "umbral": 0.52,
+   "sensibilidad": 0.7657657657657657,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.53,
+   "sensibilidad": 0.7477477477477478,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.54,
+   "sensibilidad": 0.7387387387387387,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.55,
+   "sensibilidad": 0.7297297297297297,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.56,
+   "sensibilidad": 0.7207207207207207,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.57,
+   "sensibilidad": 0.6936936936936937,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.58,
+   "sensibilidad": 0.6936936936936937,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.59,
+   "sensibilidad": 0.6936936936936937,
+   "especificidad": 0.9312977099236641
+  },
+  {
+   "umbral": 0.6,
+   "sensibilidad": 0.6936936936936937,
+   "especificidad": 0.9389312977099237
+  },
+  {
+   "umbral": 0.61,
+   "sensibilidad": 0.6666666666666666,
+   "especificidad": 0.9389312977099237
+  },
+  {
+   "umbral": 0.62,
+   "sensibilidad": 0.6666666666666666,
+   "especificidad": 0.9389312977099237
+  },
+  {
+   "umbral": 0.63,
+   "sensibilidad": 0.6216216216216216,
+   "especificidad": 0.9465648854961832
+  },
+  {
+   "umbral": 0.64,
+   "sensibilidad": 0.6216216216216216,
+   "especificidad": 0.9541984732824428
+  },
+  {
+   "umbral": 0.65,
+   "sensibilidad": 0.6036036036036037,
+   "especificidad": 0.9541984732824428
+  },
+  {
+   "umbral": 0.66,
+   "sensibilidad": 0.5855855855855856,
+   "especificidad": 0.9541984732824428
+  },
+  {
+   "umbral": 0.67,
+   "sensibilidad": 0.5585585585585585,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.68,
+   "sensibilidad": 0.5585585585585585,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.69,
+   "sensibilidad": 0.5495495495495496,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.7,
+   "sensibilidad": 0.5495495495495496,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.71,
+   "sensibilidad": 0.5225225225225225,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.72,
+   "sensibilidad": 0.5225225225225225,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.73,
+   "sensibilidad": 0.5225225225225225,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.74,
+   "sensibilidad": 0.5225225225225225,
+   "especificidad": 0.9618320610687023
+  },
+  {
+   "umbral": 0.75,
+   "sensibilidad": 0.5045045045045045,
+   "especificidad": 0.9694656488549618
+  },
+  {
+   "umbral": 0.76,
+   "sensibilidad": 0.4954954954954955,
+   "especificidad": 0.9694656488549618
+  },
+  {
+   "umbral": 0.77,
+   "sensibilidad": 0.4774774774774775,
+   "especificidad": 0.9694656488549618
+  },
+  {
+   "umbral": 0.78,
+   "sensibilidad": 0.4594594594594595,
+   "especificidad": 0.9694656488549618
+  },
+  {
+   "umbral": 0.79,
+   "sensibilidad": 0.45045045045045046,
+   "especificidad": 0.9694656488549618
+  },
+  {
+   "umbral": 0.8,
+   "sensibilidad": 0.44144144144144143,
+   "especificidad": 0.9770992366412213
+  },
+  {
+   "umbral": 0.81,
+   "sensibilidad": 0.43243243243243246,
+   "especificidad": 0.9770992366412213
+  },
+  {
+   "umbral": 0.82,
+   "sensibilidad": 0.4144144144144144,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.83,
+   "sensibilidad": 0.3963963963963964,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.84,
+   "sensibilidad": 0.36936936936936937,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.85,
+   "sensibilidad": 0.35135135135135137,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.86,
+   "sensibilidad": 0.35135135135135137,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.87,
+   "sensibilidad": 0.3333333333333333,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.88,
+   "sensibilidad": 0.3153153153153153,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.89,
+   "sensibilidad": 0.26126126126126126,
+   "especificidad": 0.9847328244274809
+  },
+  {
+   "umbral": 0.9,
+   "sensibilidad": 0.2072072072072072,
+   "especificidad": 0.9923664122137404
+  },
+  {
+   "umbral": 0.91,
+   "sensibilidad": 0.1891891891891892,
+   "especificidad": 1.0
+  },
+  {
+   "umbral": 0.92,
+   "sensibilidad": 0.18018018018018017,
+   "especificidad": 1.0
+  },
+  {
+   "umbral": 0.93,
+   "sensibilidad": 0.17117117117117117,
+   "especificidad": 1.0
+  },
+  {
+   "umbral": 0.94,
+   "sensibilidad": 0.15315315315315314,
+   "especificidad": 1.0
+  },
+  {
+   "umbral": 0.95,
+   "sensibilidad": 0.13513513513513514,
+   "especificidad": 1.0
+  }
+ ],
+ "coeficientes": [
+  {
+   "columna": "num__age",
+   "variable": "age",
+   "descripcion": "Edad (+1 desv. estándar)",
+   "coef": -0.023516195844277273,
+   "odds_ratio": 0.9767581551177618
+  },
+  {
+   "columna": "num__trestbps",
+   "variable": "trestbps",
+   "descripcion": "Presión en reposo (+1 desv. estándar)",
+   "coef": 0.16974719246974102,
+   "odds_ratio": 1.1850052352025005
+  },
+  {
+   "columna": "num__chol",
+   "variable": "chol",
+   "descripcion": "Colesterol (+1 desv. estándar)",
+   "coef": 0.08558299719650696,
+   "odds_ratio": 1.0893519707517318
+  },
+  {
+   "columna": "num__thalach",
+   "variable": "thalach",
+   "descripcion": "FC máxima (+1 desv. estándar)",
+   "coef": -0.32681694001102024,
+   "odds_ratio": 0.7212157566915003
+  },
+  {
+   "columna": "num__oldpeak",
+   "variable": "oldpeak",
+   "descripcion": "Depresión del ST (+1 desv. estándar)",
+   "coef": 0.24611053786670375,
+   "odds_ratio": 1.2790409481858076
+  },
+  {
+   "columna": "num__ca",
+   "variable": "ca",
+   "descripcion": "Vasos coloreados (+1 desv. estándar)",
+   "coef": 0.7002902414661647,
+   "odds_ratio": 2.014337266836366
+  },
+  {
+   "columna": "bin__sex",
+   "variable": "sex",
+   "descripcion": "Sexo: hombre",
+   "coef": 0.5354683054416167,
+   "odds_ratio": 1.708248036816794
+  },
+  {
+   "columna": "bin__fbs",
+   "variable": "fbs",
+   "descripcion": "Glucemia > 120 mg/dl",
+   "coef": -0.03743309002562847,
+   "odds_ratio": 0.9632588671907584
+  },
+  {
+   "columna": "bin__exang",
+   "variable": "exang",
+   "descripcion": "Angina por ejercicio",
+   "coef": 0.3783658772872903,
+   "odds_ratio": 1.4598969883221
+  },
+  {
+   "columna": "cat__cp_1.0",
+   "variable": "cp",
+   "descripcion": "Tipo de dolor torácico: angina típica",
+   "coef": -0.19050641513782818,
+   "odds_ratio": 0.8265404553411069
+  },
+  {
+   "columna": "cat__cp_2.0",
+   "variable": "cp",
+   "descripcion": "Tipo de dolor torácico: angina atípica",
+   "coef": -0.06756101515358374,
+   "odds_ratio": 0.9346706898004848
+  },
+  {
+   "columna": "cat__cp_3.0",
+   "variable": "cp",
+   "descripcion": "Tipo de dolor torácico: no anginoso",
+   "coef": -0.2940639402349898,
+   "odds_ratio": 0.7452288398127378
+  },
+  {
+   "columna": "cat__cp_4.0",
+   "variable": "cp",
+   "descripcion": "Tipo de dolor torácico: asintomático",
+   "coef": 0.5515728660775947,
+   "odds_ratio": 1.7359813378215723
+  },
+  {
+   "columna": "cat__restecg_0.0",
+   "variable": "restecg",
+   "descripcion": "ECG en reposo: normal",
+   "coef": -0.12913992611779895,
+   "odds_ratio": 0.8788509827353923
+  },
+  {
+   "columna": "cat__restecg_1.0",
+   "variable": "restecg",
+   "descripcion": "ECG en reposo: anomalía ST-T",
+   "coef": -0.02212585739445036,
+   "odds_ratio": 0.9781171240314586
+  },
+  {
+   "columna": "cat__restecg_2.0",
+   "variable": "restecg",
+   "descripcion": "ECG en reposo: hipertrofia VI",
+   "coef": 0.1507072790634428,
+   "odds_ratio": 1.1626562744319946
+  },
+  {
+   "columna": "cat__slope_1.0",
+   "variable": "slope",
+   "descripcion": "Pendiente del ST: ascendente",
+   "coef": -0.2517775273726046,
+   "odds_ratio": 0.7774176729838828
+  },
+  {
+   "columna": "cat__slope_2.0",
+   "variable": "slope",
+   "descripcion": "Pendiente del ST: plana",
+   "coef": 0.2967576540132434,
+   "odds_ratio": 1.3454891860290958
+  },
+  {
+   "columna": "cat__slope_3.0",
+   "variable": "slope",
+   "descripcion": "Pendiente del ST: descendente",
+   "coef": -0.04553863108944549,
+   "odds_ratio": 0.9554826905217015
+  },
+  {
+   "columna": "cat__thal_3.0",
+   "variable": "thal",
+   "descripcion": "Prueba de talio: normal",
+   "coef": -0.5149221850079903,
+   "odds_ratio": 0.5975470909312651
+  },
+  {
+   "columna": "cat__thal_6.0",
+   "variable": "thal",
+   "descripcion": "Prueba de talio: defecto fijo",
+   "coef": -0.015460651776706393,
+   "odds_ratio": 0.9846582505421886
+  },
+  {
+   "columna": "cat__thal_7.0",
+   "variable": "thal",
+   "descripcion": "Prueba de talio: defecto reversible",
+   "coef": 0.5298243323358897,
+   "odds_ratio": 1.6986338873606641
+  }
+ ],
+ "odds_ratios": [
+  {
+   "variable": "thal",
+   "comparacion": "Prueba de talio: defecto reversible frente a normal",
+   "etiqueta_corta": "Talio: defecto reversible vs. normal",
+   "log_or": 1.04474651734388,
+   "odds_ratio": 2.8426778627829603
+  },
+  {
+   "variable": "ca",
+   "comparacion": "Vasos coloreados: cada vaso adicional",
+   "etiqueta_corta": "Vasos coloreados (por vaso adicional)",
+   "log_or": 0.7951443410937452,
+   "odds_ratio": 2.214760654708918
+  },
+  {
+   "variable": "cp",
+   "comparacion": "Tipo de dolor torácico: asintomático frente a angina típica",
+   "etiqueta_corta": "Dolor: asintomático vs. angina típica",
+   "log_or": 0.7420792812154229,
+   "odds_ratio": 2.100298087774961
+  },
+  {
+   "variable": "slope",
+   "comparacion": "Pendiente del ST: plana frente a ascendente",
+   "etiqueta_corta": "Pendiente ST: plana vs. ascendente",
+   "log_or": 0.548535181385848,
+   "odds_ratio": 1.7307159751910994
+  },
+  {
+   "variable": "sex",
+   "comparacion": "Sexo: hombre frente a mujer",
+   "etiqueta_corta": "Sexo: hombre vs. mujer",
+   "log_or": 0.5354683054416167,
+   "odds_ratio": 1.708248036816794
+  },
+  {
+   "variable": "thal",
+   "comparacion": "Prueba de talio: defecto fijo frente a normal",
+   "etiqueta_corta": "Talio: defecto fijo vs. normal",
+   "log_or": 0.49946153323128384,
+   "odds_ratio": 1.6478337280625337
+  },
+  {
+   "variable": "exang",
+   "comparacion": "Angina por ejercicio: sí frente a no",
+   "etiqueta_corta": "Angina por ejercicio",
+   "log_or": 0.3783658772872903,
+   "odds_ratio": 1.4598969883221
+  },
+  {
+   "variable": "restecg",
+   "comparacion": "ECG en reposo: hipertrofia VI frente a normal",
+   "etiqueta_corta": "ECG: hipertrofia VI vs. normal",
+   "log_or": 0.27984720518124173,
+   "odds_ratio": 1.3229276604018447
+  },
+  {
+   "variable": "oldpeak",
+   "comparacion": "Depresión del ST: cada 1 mm",
+   "etiqueta_corta": "Depresión del ST (por 1 mm)",
+   "log_or": 0.21962039110508735,
+   "odds_ratio": 1.24560379854699
+  },
+  {
+   "variable": "slope",
+   "comparacion": "Pendiente del ST: descendente frente a ascendente",
+   "etiqueta_corta": "Pendiente ST: descendente vs. ascendente",
+   "log_or": 0.2062388962831591,
+   "odds_ratio": 1.2290467836348125
+  },
+  {
+   "variable": "thalach",
+   "comparacion": "FC máxima: cada 10 lpm",
+   "etiqueta_corta": "FC máxima (por 10 lpm)",
+   "log_or": -0.14435678508242522,
+   "odds_ratio": 0.865578867332937
+  },
+  {
+   "variable": "cp",
+   "comparacion": "Tipo de dolor torácico: angina atípica frente a angina típica",
+   "etiqueta_corta": "Dolor: angina atípica vs. angina típica",
+   "log_or": 0.12294539998424443,
+   "odds_ratio": 1.130822676325932
+  },
+  {
+   "variable": "restecg",
+   "comparacion": "ECG en reposo: anomalía ST-T frente a normal",
+   "etiqueta_corta": "ECG: anomalía ST-T vs. normal",
+   "log_or": 0.1070140687233486,
+   "odds_ratio": 1.1129499121535986
+  },
+  {
+   "variable": "cp",
+   "comparacion": "Tipo de dolor torácico: no anginoso frente a angina típica",
+   "etiqueta_corta": "Dolor: no anginoso vs. angina típica",
+   "log_or": -0.1035575250971616,
+   "odds_ratio": 0.901624155232895
+  },
+  {
+   "variable": "trestbps",
+   "comparacion": "Presión en reposo: cada 10 mm Hg",
+   "etiqueta_corta": "Presión en reposo (por 10 mm Hg)",
+   "log_or": 0.09652348345274961,
+   "odds_ratio": 1.101335443998979
+  },
+  {
+   "variable": "fbs",
+   "comparacion": "Glucemia > 120 mg/dl: sí frente a no",
+   "etiqueta_corta": "Glucemia > 120 mg/dl",
+   "log_or": -0.03743309002562847,
+   "odds_ratio": 0.9632588671907584
+  },
+  {
+   "variable": "age",
+   "comparacion": "Edad: cada 10 años",
+   "etiqueta_corta": "Edad (por 10 años)",
+   "log_or": -0.026192046664398526,
+   "odds_ratio": 0.9741479897713085
+  },
+  {
+   "variable": "chol",
+   "comparacion": "Colesterol: cada 10 mg/dl",
+   "etiqueta_corta": "Colesterol (por 10 mg/dl)",
+   "log_or": 0.016228090026751536,
+   "odds_ratio": 1.01636048065922
+  }
+ ],
+ "importancia_permutacion": [
+  {
+   "variable": "ca",
+   "nombre": "Vasos coloreados",
+   "importancia": 0.06913419913419923
+  },
+  {
+   "variable": "cp",
+   "nombre": "Tipo de dolor torácico",
+   "importancia": 0.023722943722943802
+  },
+  {
+   "variable": "oldpeak",
+   "nombre": "Depresión del ST",
+   "importancia": 0.015519480519480629
+  },
+  {
+   "variable": "thal",
+   "nombre": "Prueba de talio",
+   "importancia": 0.015367965367965435
+  },
+  {
+   "variable": "thalach",
+   "nombre": "FC máxima",
+   "importancia": 0.009632034632034735
+  },
+  {
+   "variable": "exang",
+   "nombre": "Angina por ejercicio",
+   "importancia": 0.00948051948051956
+  },
+  {
+   "variable": "slope",
+   "nombre": "Pendiente del ST",
+   "importancia": 0.006645021645021738
+  },
+  {
+   "variable": "trestbps",
+   "nombre": "Presión en reposo",
+   "importancia": 0.003722943722943788
+  },
+  {
+   "variable": "age",
+   "nombre": "Edad",
+   "importancia": 0.0012121212121212644
+  },
+  {
+   "variable": "fbs",
+   "nombre": "Glucemia > 120 mg/dl",
+   "importancia": 0.00017316017316018728
+  },
+  {
+   "variable": "restecg",
+   "nombre": "ECG en reposo",
+   "importancia": 2.1645021645073646e-05
+  },
+  {
+   "variable": "sex",
+   "nombre": "Sexo",
+   "importancia": -0.00043290043290036275
+  },
+  {
+   "variable": "chol",
+   "nombre": "Colesterol",
+   "importancia": -0.001385281385281345
+  }
+ ],
+ "curva_aprendizaje": {
+  "pacientes": [
+   38,
+   69,
+   100,
+   131,
+   162,
+   193
+  ],
+  "auc_entrenamiento": [
+   0.9750747188188741,
+   0.930768332286798,
+   0.9214879441401088,
+   0.9384480687869238,
+   0.9373333785867568,
+   0.9259050500061736
+  ],
+  "auc_validacion": [
+   0.8912516093675513,
+   0.8990965019950526,
+   0.8985935159848205,
+   0.9023935002195873,
+   0.9039767800637365,
+   0.8997500084456608
+  ]
+ },
+ "ejemplos": {
+  "bajo": {
+   "fila": 89,
+   "probabilidad": 0.09997734748039853,
+   "real": 0,
+   "valores": {
+    "age": 51,
+    "trestbps": 130,
+    "chol": 256,
+    "thalach": 149,
+    "oldpeak": 0.5,
+    "ca": 0,
+    "sex": 0,
+    "fbs": 0,
+    "exang": 0,
+    "cp": 3,
+    "restecg": 2,
+    "slope": 1,
+    "thal": 3
+   }
+  },
+  "alto": {
+   "fila": 213,
+   "probabilidad": 0.8956913709391183,
+   "real": 1,
+   "valores": {
+    "age": 66,
+    "trestbps": 178,
+    "chol": 228,
+    "thalach": 165,
+    "oldpeak": 1.0,
+    "ca": 2,
+    "sex": 0,
+    "fbs": 1,
+    "exang": 1,
+    "cp": 4,
+    "restecg": 0,
+    "slope": 2,
+    "thal": 7
+   }
+  }
+ },
+ "versiones": {
+  "python": "3.13.18",
+  "scikit-learn": "1.9.1",
+  "pandas": "3.0.5",
+  "numpy": "2.5.3"
+ },
+ "fecha_entrenamiento": "2026-10-29"
+}
