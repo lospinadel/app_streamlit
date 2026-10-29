@@ -4,6 +4,13 @@ CardioRiesgo - ACA 1 Aprendizaje Automático (CUN), Grupo 13.
 Aplicación Streamlit que usa el modelo de regresión logística entrenado en el
 notebook del proyecto con el dataset UCI Heart Disease (Cleveland).
 
+Diseño: tema oscuro inspirado en un monitor de cabecera. Cada color significa
+algo: blanco para los datos, cian para el modelo, verde para riesgo bajo, rojo
+para riesgo alto y ámbar para el umbral de decisión. Los gráficos usan azul
+(sin enfermedad) y naranja (con enfermedad). Las tipografías (Atkinson
+Hyperlegible Next para el texto y Saira para títulos y cifras) se cargan desde
+.streamlit/config.toml.
+
 Ejecución local:  streamlit run app.py
 """
 import json
@@ -16,7 +23,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # ---------------------------------------------------------------------------
-# Rutas y constantes
+# Rutas
 # ---------------------------------------------------------------------------
 BASE = Path(__file__).parent
 RUTA_MODELO = BASE / "modelo" / "modelo_cardio.joblib"
@@ -24,56 +31,233 @@ RUTA_META = BASE / "modelo" / "metadata.json"
 RUTA_DATOS = BASE / "data" / "heart_clean.csv"
 RUTA_PLANTILLA = BASE / "data" / "plantilla_pacientes.csv"
 
-AZUL = "#2a78d6"      # Sin enfermedad / disminuye el riesgo
-NARANJA = "#eb6834"   # Con enfermedad / aumenta el riesgo
-TINTA = "#0b0b0b"
-TINTA_2 = "#52514e"
-GRIS = "#898781"
-GRIS_CLARO = "#c3c2b7"
-REJILLA = "#e1e0d9"
-FONDO = "#fcfcfb"
-ALERTA = "#d03b3b"    # estado: riesgo alto (siempre con ícono y texto)
-BIEN = "#0ca30c"      # estado: riesgo bajo (siempre con ícono y texto)
+# ---------------------------------------------------------------------------
+# Paleta y tipografía (contraste verificado: todo texto >= 4,5:1 sobre PANEL)
+# ---------------------------------------------------------------------------
+PANTALLA = "#060b16"   # fondo de la página
+PANEL = "#0c1424"      # tarjetas y gráficos
+PANEL_2 = "#111b30"    # controles y superficies elevadas
+BORDE = "#1e2b47"
+BORDE_2 = "#2a3a5c"
+TINTA = "#eaf0fa"
+TINTA_2 = "#a9b6cc"
+TINTA_3 = "#8391a8"
+CIAN = "#2fd3f0"       # canal del modelo y acento de la interfaz
+VERDE = "#2fe08f"      # riesgo bajo (siempre con ícono y texto)
+ROJO = "#ff5a6e"       # riesgo alto (siempre con ícono y texto)
+AMBAR = "#ffb648"      # umbral de decisión
+AZUL = "#4292f4"       # sin enfermedad / baja el riesgo
+NARANJA = "#e7672b"    # con enfermedad / sube el riesgo
+REJILLA = "#18233b"
+EJE = "#2a3a5c"
+GRIS_BARRA = "#33415e"
 COLOR_DX = {"Sin enfermedad": AZUL, "Con enfermedad": NARANJA}
+FUENTE_CIFRAS = "Saira, 'Atkinson Hyperlegible Next', system-ui, sans-serif"
 
 st.set_page_config(
-    page_title="CardioRiesgo · ACA 1 Grupo 13",
-    page_icon="🫀",
+    page_title="CardioRiesgo · Grupo 13",
+    page_icon=":material/monitor_heart:",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="auto",
 )
 
-st.markdown(
-    f"""
-<style>
-.block-container {{padding-top: 1.6rem; padding-bottom: 2.5rem; max-width: 1280px;}}
-h1, h2, h3 {{letter-spacing: -0.01em;}}
-.tarjeta {{
-    padding: 16px 18px; border-radius: 14px; background: #ffffff;
-    border: 1px solid rgba(11,11,11,.08); box-shadow: 0 4px 14px rgba(0,0,0,.04);
+RAIZ = f"""
+:root {{
+  --cr-pantalla: {PANTALLA}; --cr-panel: {PANEL}; --cr-panel-2: {PANEL_2};
+  --cr-borde: {BORDE}; --cr-borde-2: {BORDE_2};
+  --cr-tinta: {TINTA}; --cr-tinta-2: {TINTA_2}; --cr-tinta-3: {TINTA_3};
+  --cr-cian: {CIAN}; --cr-verde: {VERDE}; --cr-rojo: {ROJO}; --cr-ambar: {AMBAR};
+  --cr-cifras: {FUENTE_CIFRAS};
+  --cr-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }}
-.kpi-label {{font-size: .82rem; color: {TINTA_2}; margin-bottom: 4px;}}
-.kpi-valor {{font-size: 1.65rem; font-weight: 650; color: {TINTA}; line-height: 1.15;}}
-.kpi-nota {{font-size: .78rem; color: {GRIS}; margin-top: 4px;}}
-.hero {{font-size: 3.4rem; font-weight: 700; color: {TINTA}; line-height: 1;}}
-.hero-label {{font-size: .9rem; color: {TINTA_2}; margin-bottom: 6px;}}
-.estado {{display: inline-block; padding: 6px 12px; border-radius: 999px; font-weight: 600;
-          font-size: .95rem; margin: 10px 0 6px 0;}}
-.medidor {{position: relative; height: 14px; border-radius: 999px; background: #eceae4; margin: 14px 0 6px 0;}}
-.medidor-relleno {{position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;}}
-.medidor-umbral {{position: absolute; top: -5px; width: 2px; height: 24px; background: {TINTA};}}
-.medidor-escala {{display: flex; justify-content: space-between; font-size: .75rem; color: {GRIS};}}
-.aviso {{padding: 10px 14px; border-radius: 10px; background: #f6f5f1; color: {TINTA_2};
-         font-size: .85rem; border-left: 3px solid {GRIS_CLARO};}}
-.texto-suave {{color: {TINTA_2}; font-size: .92rem;}}
-</style>
-""",
-    unsafe_allow_html=True,
-)
+"""
+
+CSS = """
+.block-container, [data-testid="stMainBlockContainer"] {max-width: 1240px; padding-top: 4.2rem; padding-bottom: 3rem;}
+[data-testid="stHeading"] h3 {font-weight: 600; font-size: 1.45rem;}
+
+/* Encabezado: marca, trazo de ECG y canales del monitor */
+section.cr-hero {position: relative; padding: 22px 28px 20px; border: 1px solid var(--cr-borde);
+  border-radius: 18px; background: var(--cr-panel); overflow: hidden; margin: 0;}
+section.cr-hero::before {content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(122,146,190,.06) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(122,146,190,.06) 1px, transparent 1px);
+  background-size: 24px 24px;}
+section.cr-hero > * {position: relative;}
+section.cr-hero ul.cr-chips {display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0 0 12px; padding: 0;}
+section.cr-hero ul.cr-chips li {margin: 0; padding: 5px 11px; font-size: .84rem; line-height: 1.2; color: var(--cr-tinta-2);
+  border: 1px solid var(--cr-borde-2); border-radius: 999px; background: var(--cr-panel-2);}
+section.cr-hero ul.cr-chips li::marker {content: none;}
+section.cr-hero div.cr-marca {font-family: var(--cr-cifras); font-weight: 700; font-stretch: 125%;
+  font-variation-settings: "wdth" 125; font-size: clamp(2.5rem, 3.2vw + 1.2rem, 4rem); line-height: 1;
+  letter-spacing: -0.01em; color: var(--cr-tinta); margin: 0; padding: 0;}
+section.cr-hero svg.cr-ecg {display: block; width: 100%; height: auto; margin: 6px 0 4px; overflow: visible;}
+section.cr-hero .cr-traza {fill: none; stroke: var(--cr-verde); stroke-width: 2.6; stroke-linecap: round;
+  stroke-linejoin: round; filter: drop-shadow(0 0 5px rgba(47,224,143,.55));}
+section.cr-hero .cr-punto {fill: var(--cr-verde);}
+section.cr-hero .cr-onda {fill: none; stroke: var(--cr-verde); stroke-width: 1.6; transform-box: fill-box;
+  transform-origin: center; animation: cr-latido 1.1s var(--cr-ease-out) infinite;}
+section.cr-hero p.cr-lema {color: var(--cr-tinta-2); font-size: 1.04rem; line-height: 1.55; max-width: 68ch; margin: 0;}
+
+div.cr-fila {container-type: inline-size;}
+div.cr-canales {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0 10px;}
+div.cr-canales.cr-n5 > .cr-canal:last-child {grid-column: 1 / -1;}
+@container (min-width: 620px) {
+  div.cr-canales.cr-n4 {grid-template-columns: repeat(4, minmax(0, 1fr));}
+  div.cr-canales.cr-n6 {grid-template-columns: repeat(3, minmax(0, 1fr));}
+}
+@container (min-width: 760px) {
+  div.cr-canales.cr-n5 {grid-template-columns: repeat(5, minmax(0, 1fr));}
+  div.cr-canales.cr-n5 > .cr-canal:last-child {grid-column: auto;}
+}
+@container (min-width: 960px) {
+  div.cr-canales.cr-n6 {grid-template-columns: repeat(6, minmax(0, 1fr));}
+  div.cr-canales.cr-n6 .cr-canal-valor {font-size: 1.8rem;}
+}
+div.cr-canales .cr-canal {position: relative; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 4px;
+  align-content: start; padding: 13px 15px 12px; background: var(--cr-panel); border: 1px solid var(--cr-borde);
+  border-radius: 12px; overflow: hidden; min-width: 0;}
+div.cr-canales .cr-canal::before {content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--canal);}
+div.cr-canales .cr-canal-nombre {font-size: .88rem; line-height: 1.3; color: var(--cr-tinta-2); align-self: start;}
+div.cr-canales .cr-canal-valor {font-family: var(--cr-cifras); font-weight: 600; font-size: 2.15rem; line-height: 1.1;
+  color: var(--canal); font-variant-numeric: tabular-nums; white-space: nowrap; align-self: end;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--canal) 35%, transparent);}
+div.cr-canales .cr-canal-nota {font-size: .8rem; line-height: 1.35; color: var(--cr-tinta-3);}
+div.cr-canales .cr-c-datos {--canal: var(--cr-tinta);}
+div.cr-canales .cr-c-modelo {--canal: var(--cr-cian);}
+div.cr-canales .cr-c-decision {--canal: var(--cr-verde);}
+
+/* Animación de entrada: solo la primera vez que se abre la app */
+div.cr-anim .cr-traza {stroke-dasharray: 1; stroke-dashoffset: 1; animation: cr-barrido 1.7s linear .15s forwards;}
+div.cr-anim .cr-cabeza {opacity: 0; animation: cr-aparece 180ms ease-out 1.8s forwards;}
+div.cr-anim .cr-canal {opacity: 0; transform: translateY(6px); animation: cr-entra 360ms var(--cr-ease-out) forwards;}
+div.cr-anim .cr-canal:nth-child(1) {animation-delay: .55s;}
+div.cr-anim .cr-canal:nth-child(2) {animation-delay: .61s;}
+div.cr-anim .cr-canal:nth-child(3) {animation-delay: .67s;}
+div.cr-anim .cr-canal:nth-child(4) {animation-delay: .73s;}
+div.cr-anim .cr-canal:nth-child(5) {animation-delay: .79s;}
+@keyframes cr-barrido {to {stroke-dashoffset: 0;}}
+@keyframes cr-aparece {to {opacity: 1;}}
+@keyframes cr-entra {to {opacity: 1; transform: none;}}
+@keyframes cr-latido {from {transform: scale(1); opacity: .75;} to {transform: scale(3.2); opacity: 0;}}
+
+/* Lectura del riesgo */
+div.cr-lectura {--estado: var(--cr-verde); position: relative; padding: 16px 20px 14px; background: var(--cr-panel);
+  border: 1px solid var(--cr-borde); border-radius: 16px; overflow: hidden;}
+div.cr-lectura.cr-alto {--estado: var(--cr-rojo);}
+div.cr-lectura::before {content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--estado);}
+div.cr-lectura .cr-lectura-cab {display: flex; justify-content: space-between; align-items: center; gap: 8px 14px;
+  flex-wrap: wrap; font-size: .92rem; color: var(--cr-tinta-2);}
+div.cr-lectura .cr-criterio {font-size: .82rem; color: var(--cr-tinta); padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--cr-borde-2); background: var(--cr-panel-2); white-space: nowrap;}
+div.cr-lectura .cr-lectura-valor {font-family: var(--cr-cifras); font-weight: 600; font-size: clamp(4rem, 5vw + 1.4rem, 5.6rem);
+  line-height: 1; margin: 14px 0 12px; color: var(--estado); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  text-shadow: 0 0 28px color-mix(in srgb, var(--estado) 40%, transparent);}
+div.cr-lectura .cr-unidad {font-size: .4em; font-weight: 500; margin-left: .14em; color: var(--cr-tinta-2); text-shadow: none;}
+div.cr-lectura .cr-estado {display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+  font-size: .98rem; line-height: 1.4; color: var(--cr-tinta); background: color-mix(in srgb, var(--estado) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--estado) 38%, transparent);}
+div.cr-lectura .cr-estado svg {flex: none; color: var(--estado);}
+div.cr-lectura .cr-barra {position: relative; display: flex; gap: 3px; margin: 20px 0 6px;}
+div.cr-lectura .cr-seg {flex: 1; height: 14px; border-radius: 3px; background: var(--cr-panel-2);
+  box-shadow: inset 0 0 0 1px var(--cr-borde);}
+div.cr-lectura .cr-seg.on {background: var(--estado); box-shadow: 0 0 8px color-mix(in srgb, var(--estado) 45%, transparent);}
+div.cr-lectura .cr-umbral {position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; border-radius: 2px;
+  background: var(--cr-ambar); box-shadow: 0 0 6px rgba(255,182,72,.6);}
+div.cr-lectura .cr-escala {position: relative; height: 20px; font-size: .8rem; color: var(--cr-tinta-3);}
+div.cr-lectura .cr-escala span {position: absolute; top: 0; white-space: nowrap;}
+div.cr-lectura .cr-escala .cr-e-umbral {color: var(--cr-ambar); transform: translateX(-50%);}
+div.cr-lectura .cr-escala .cr-e-fin {right: 0;}
+p.cr-nota {color: var(--cr-tinta-2); font-size: .94rem; line-height: 1.55; margin: 12px 2px 0;}
+p.cr-nota b {color: var(--cr-tinta);}
+@media (min-width: 992px) {
+  [data-testid="stColumn"]:has(.cr-lectura) {position: sticky; top: 4.25rem; align-self: flex-start;}
+}
+
+/* Rótulos de grupo, avisos, fichas y pasos */
+p.cr-rotulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1.02rem; color: var(--cr-tinta); margin: 0 0 2px;}
+div.cr-aviso {display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px;
+  background: var(--cr-panel); border: 1px solid var(--cr-borde); color: var(--cr-tinta-2); font-size: .9rem; line-height: 1.5;}
+div.cr-aviso svg {flex: none; margin-top: 1px; color: var(--cr-ambar);}
+div.cr-fichas {display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin: 4px 0 8px;}
+div.cr-fichas .cr-ficha {padding: 18px 20px; background: var(--cr-panel); border: 1px solid var(--cr-borde); border-radius: 14px;}
+div.cr-fichas .cr-ficha-titulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1.15rem; color: var(--cr-tinta);
+  margin: 0 0 8px; padding: 0;}
+div.cr-fichas p {color: var(--cr-tinta-2); font-size: .96rem; line-height: 1.55; margin: 0;}
+div.cr-fichas p b {color: var(--cr-tinta);}
+ol.cr-pasos {list-style: none; counter-reset: paso; display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 10px; padding: 0; margin: 6px 0 18px;}
+ol.cr-pasos li {counter-increment: paso; margin: 0; padding: 14px 14px 13px; border: 1px solid var(--cr-borde);
+  border-radius: 12px; background: var(--cr-panel);}
+ol.cr-pasos li::before {content: counter(paso); display: block; font-family: var(--cr-cifras); font-weight: 700;
+  font-size: 1.5rem; line-height: 1; color: var(--cr-cian); margin-bottom: 8px;}
+ol.cr-pasos strong {display: block; color: var(--cr-tinta); font-size: 1rem; margin-bottom: 4px;}
+ol.cr-pasos span {display: block; color: var(--cr-tinta-2); font-size: .88rem; line-height: 1.45;}
+
+/* Barra lateral */
+div.cr-side .cr-side-marca {display: flex; align-items: center; gap: 10px; margin: 0 0 6px; color: var(--cr-tinta);
+  font-family: var(--cr-cifras); font-weight: 700; font-size: 1.4rem; font-variation-settings: "wdth" 115;}
+div.cr-side .cr-side-marca svg {color: var(--cr-verde); flex: none;}
+div.cr-side p {font-size: .9rem; line-height: 1.5; color: var(--cr-tinta-2); margin: 0 0 4px;}
+div.cr-side .cr-side-titulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1rem; color: var(--cr-tinta);
+  margin: 22px 0 6px; padding: 0;}
+div.cr-side dl {margin: 0; padding: 0;}
+div.cr-side dl > div {display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 0;
+  margin: 0; border-bottom: 1px solid var(--cr-borde);}
+div.cr-side dt {font-size: .86rem; color: var(--cr-tinta-2); margin: 0; font-weight: 400;}
+div.cr-side dd {margin: 0; padding: 0; font-family: var(--cr-cifras); font-size: .95rem; color: var(--cr-tinta); text-align: right; font-variant-numeric: tabular-nums;}
+div.cr-side ul {margin: 0; padding: 0 0 0 1.05rem;}
+div.cr-side li {font-size: .9rem; color: var(--cr-tinta); margin: 3px 0; padding: 0;}
+div.cr-side p.cr-side-aviso {margin-top: 20px; padding: 10px 12px; border-radius: 10px; background: var(--cr-panel);
+  border: 1px solid var(--cr-borde); font-size: .84rem;}
+
+/* Gráficos dentro de una tarjeta */
+[data-testid="stPlotlyChart"] {background: var(--cr-panel); border: 1px solid var(--cr-borde); border-radius: 14px; overflow: hidden;}
+
+/* Pestañas */
+[data-testid="stTabs"] [data-baseweb="tab-list"] {gap: 4px;}
+[data-testid="stTabs"] button[data-baseweb="tab"] p {font-size: 1rem; font-weight: 600;}
+
+/* Respuesta al presionar (botones) */
+[data-testid^="stBaseButton"] {transition: transform 160ms var(--cr-ease-out), background-color 160ms ease,
+  border-color 160ms ease, color 160ms ease;}
+[data-testid^="stBaseButton"]:active {transform: scale(0.97);}
+
+@media (max-width: 640px) {
+  section.cr-hero {padding: 18px 18px 16px;}
+  section.cr-hero .cr-traza {stroke-width: 6;}
+  section.cr-hero .cr-onda {stroke-width: 3;}
+  div.cr-canales .cr-canal-valor {font-size: 1.9rem;}
+}
+@media (prefers-reduced-motion: reduce) {
+  div.cr-anim .cr-traza {animation: none; stroke-dashoffset: 0;}
+  div.cr-anim .cr-cabeza {animation: none; opacity: 1;}
+  div.cr-anim .cr-canal {transform: none; animation: cr-aparece 200ms ease forwards;}
+  section.cr-hero .cr-onda {animation: none; opacity: 0;}
+  [data-testid^="stBaseButton"]:active {transform: none;}
+}
+"""
+
+st.html(f"<style>{RAIZ}{CSS}</style>")
+
+# Íconos (SVG propios, trazo de 2 px; decorativos junto a texto visible)
+ICONO_ALERTA = ('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" '
+                'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6 2.6 20h18.8L12 3.6z"/>'
+                '<path d="M12 10v4.4"/><path d="M12 17.3h.01"/></svg>')
+ICONO_OK = ('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" '
+            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/>'
+            '<path d="m8 12.4 2.8 2.8L16.2 9.8"/></svg>')
+ICONO_INFO = ('<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" '
+              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/>'
+              '<path d="M12 11v5.5"/><path d="M12 7.6h.01"/></svg>')
+ICONO_MARCA = ('<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" '
+               'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+               '<path d="M12 20.4s-7.6-4.5-9.3-9.3C1.5 7.7 3.5 4.6 6.9 4.6c2.1 0 3.7 1.2 5.1 3 1.4-1.8 3-3 5.1-3 '
+               '3.4 0 5.4 3.1 4.2 6.5-1.7 4.8-9.3 9.3-9.3 9.3z"/><path d="M3.2 12.2h4.6l1.6-3 2.4 6.2 1.9-4.4 1 1.2h6.1"/></svg>')
 
 
 # ---------------------------------------------------------------------------
-# Utilidades de formato
+# Utilidades de formato y piezas de interfaz
 # ---------------------------------------------------------------------------
 def num(x, dec=1):
     """Número con coma decimal (formato usado en Colombia)."""
@@ -81,37 +265,73 @@ def num(x, dec=1):
 
 
 def pct(x, dec=1):
-    return f"{num(100 * x, dec)} %"
+    return f"{num(100 * x, dec)}\u00a0%"
 
 
-def tarjeta_kpi(etiqueta, valor, nota=""):
-    nota_html = f'<div class="kpi-nota">{nota}</div>' if nota else ""
-    return (
-        f'<div class="tarjeta"><div class="kpi-label">{etiqueta}</div>'
-        f'<div class="kpi-valor">{valor}</div>{nota_html}</div>'
-    )
+def rgba(color_hex, alfa):
+    r, g, b = (int(color_hex[i:i + 2], 16) for i in (1, 3, 5))
+    return f"rgba({r},{g},{b},{alfa})"
+
+
+def canal(nombre, valor, nota="", tipo="datos"):
+    """Recuadro estilo monitor: nombre del canal, cifra grande y una nota."""
+    nota_html = f'<span class="cr-canal-nota">{nota}</span>' if nota else ""
+    return (f'<div class="cr-canal cr-c-{tipo}"><span class="cr-canal-nombre">{nombre}</span>'
+            f'<span class="cr-canal-valor">{valor}</span>{nota_html}</div>')
+
+
+def bloque(html):
+    """Inserta HTML propio. Se usa st.markdown porque conserva los SVG en línea (st.html los elimina);
+    se quitan sangrías y líneas vacías para que Markdown no lo convierta en bloques de código."""
+    st.markdown("\n".join(linea.strip() for linea in html.strip().splitlines() if linea.strip()),
+                unsafe_allow_html=True)
+
+
+def fila_canales(canales):
+    bloque(f'<div class="cr-fila"><div class="cr-canales cr-n{len(canales)}">{"".join(canales)}</div></div>')
+
+
+def rotulo(texto):
+    bloque(f'<p class="cr-rotulo">{texto}</p>')
+
+
+def aviso(texto):
+    bloque(f'<div class="cr-aviso">{ICONO_INFO}<span>{texto}</span></div>')
+
+
+def trazo_ecg():
+    """Trazo de ECG estilizado (complejos P-QRS-T) para el encabezado."""
+    y = 56
+    d = [f"M0 {y}"]
+    for x in (40, 280, 520, 760, 1000):
+        d += [f"L{x} {y}", f"Q{x + 12} {y - 14} {x + 24} {y}", f"L{x + 36} {y}", f"L{x + 40} {y + 5}",
+              f"L{x + 47} {y - 48}", f"L{x + 54} {y + 15}", f"L{x + 59} {y}", f"L{x + 74} {y}",
+              f"Q{x + 90} {y - 22} {x + 106} {y}"]
+    d.append(f"L1172 {y}")
+    return " ".join(d)
 
 
 def estilo(fig, alto=340, leyenda=True, titulo=None):
     fig.update_layout(
         height=alto,
-        margin=dict(l=8, r=8, t=56 if titulo else 24, b=8),
+        margin=dict(l=14, r=18, t=(64 if leyenda else 54) if titulo else 30, b=12),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor=FONDO,
+        plot_bgcolor="rgba(0,0,0,0)",
         separators=",.",
-        font=dict(family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif", color=TINTA_2, size=13),
+        font=dict(family=FUENTE_CIFRAS, color=TINTA_2, size=13),
         showlegend=leyenda,
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, title=None,
-                    font=dict(color=TINTA_2)),
-        hoverlabel=dict(bgcolor="white", font_size=12, font_color=TINTA),
+                    font=dict(color=TINTA_2), bgcolor="rgba(0,0,0,0)"),
+        hoverlabel=dict(bgcolor=PANEL_2, bordercolor=BORDE_2, font=dict(family=FUENTE_CIFRAS, size=13, color=TINTA)),
         bargap=0.45,
     )
     if titulo:
-        fig.update_layout(title=dict(text=titulo, x=0, xanchor="left", font=dict(size=15, color=TINTA)))
-    fig.update_xaxes(automargin=True, showgrid=False, linecolor=GRIS_CLARO, tickcolor=GRIS_CLARO, ticks="outside",
-                     title_font=dict(color=TINTA_2, size=12), tickfont=dict(color=TINTA_2), title_standoff=10)
-    fig.update_yaxes(automargin=True, gridcolor=REJILLA, gridwidth=1, zeroline=False, linecolor=GRIS_CLARO,
-                     title_font=dict(color=TINTA_2, size=12), tickfont=dict(color=TINTA_2), title_standoff=10)
+        fig.update_layout(title=dict(text=titulo, x=0, xref="container", xanchor="left", y=0.98, yanchor="top",
+                                     pad=dict(l=16, t=8), font=dict(family=FUENTE_CIFRAS, size=16, color=TINTA, weight=600)))
+    fig.update_xaxes(automargin=True, showgrid=False, zeroline=False, linecolor=EJE, tickcolor=EJE, ticks="outside",
+                     title_font=dict(color=TINTA_2, size=12), tickfont=dict(color=TINTA_3), title_standoff=10)
+    fig.update_yaxes(automargin=True, gridcolor=REJILLA, gridwidth=1, zeroline=False, linecolor=EJE,
+                     title_font=dict(color=TINTA_2, size=12), tickfont=dict(color=TINTA_3), title_standoff=10)
     return fig
 
 
@@ -182,6 +402,8 @@ VARS = meta["orden_variables"]
 INFO = meta["variables"]
 TIPOS = datos[VARS].dtypes.to_dict()
 UMBRALES = meta["umbrales"]
+PRUEBA = meta["prueba"]
+PROYECTO = meta["proyecto"]
 
 
 def etiqueta_valor(var, valor):
@@ -213,30 +435,94 @@ def aportes(paciente):
     return pd.Series(contrib, index=nombres).groupby(level=0).sum()
 
 
-# ---------------------------------------------------------------------------
-# Encabezado
-# ---------------------------------------------------------------------------
-st.title("🫀 CardioRiesgo")
-st.markdown(
-    '<p class="texto-suave">Estimación del riesgo de enfermedad coronaria con Machine Learning clásico · '
-    "Dataset UCI Heart Disease (Cleveland) · ACA 1 Aprendizaje Automático, CUN · Grupo 13</p>",
-    unsafe_allow_html=True,
-)
+def lectura(prob, umbral, criterio):
+    """Lectura principal del riesgo, como el número grande de un monitor."""
+    alto = prob >= umbral
+    estado = (f"{ICONO_ALERTA}<span><b>Riesgo alto.</b> Se sugiere estudio cardiológico.</span>" if alto
+              else f"{ICONO_OK}<span><b>Riesgo bajo</b> según el modelo.</span>")
+    encendidos = max(1, int(round(prob * 20))) if prob > 0 else 0
+    segmentos = "".join(f'<span class="cr-seg{" on" if i < encendidos else ""}"></span>' for i in range(20))
+    return f"""
+<div class="cr-lectura {'cr-alto' if alto else 'cr-bajo'}" role="status" aria-live="polite">
+  <div class="cr-lectura-cab"><span>Probabilidad estimada</span>
+    <span class="cr-criterio">{UMBRALES[criterio]['nombre']}, umbral {pct(umbral, 0)}</span></div>
+  <div class="cr-lectura-valor">{num(100 * prob, 0)}<span class="cr-unidad">%</span></div>
+  <div class="cr-estado">{estado}</div>
+  <div class="cr-barra" aria-hidden="true">{segmentos}<span class="cr-umbral" style="left:{100 * umbral:.1f}%"></span></div>
+  <div class="cr-escala" aria-hidden="true"><span>0 %</span>
+    <span class="cr-e-umbral" style="left:{100 * umbral:.1f}%">umbral {pct(umbral, 0)}</span>
+    <span class="cr-e-fin">100 %</span></div>
+</div>"""
 
+
+# ---------------------------------------------------------------------------
+# Barra lateral
+# ---------------------------------------------------------------------------
+fecha = "/".join(reversed(meta["fecha_entrenamiento"].split("-")))
+integrantes = "".join(f"<li>{n}</li>" for n in PROYECTO["integrantes"])
 with st.sidebar:
-    st.markdown("### Sobre el modelo")
-    st.markdown(
-        f"**{meta['modelo']['nombre']}** con preprocesamiento en *pipeline*.\n\n"
-        f"AUC en validación cruzada: **{num(meta['modelo']['auc_cv'], 3)}**\n\n"
-        f"Pacientes de entrenamiento: **{meta['dataset']['n_entrenamiento']}** · prueba: **{meta['dataset']['n_prueba']}**"
-    )
+    bloque(f"""
+<div class="cr-side">
+  <div class="cr-side-marca">{ICONO_MARCA}<span>CardioRiesgo</span></div>
+  <p>Riesgo de enfermedad coronaria con machine learning clásico.</p>
+  <p class="cr-side-titulo">Modelo en uso</p>
+  <dl>
+    <div><dt>Algoritmo</dt><dd>{meta['modelo']['nombre']}</dd></div>
+    <div><dt>Regularización (C)</dt><dd>{num(meta['modelo']['hiperparametros']['C'], 1)}</dd></div>
+    <div><dt>AUC validación cruzada</dt><dd>{num(meta['modelo']['auc_cv'], 3)}</dd></div>
+    <div><dt>AUC prueba</dt><dd>{num(PRUEBA['auc'], 3)}</dd></div>
+    <div><dt>Entrenamiento</dt><dd>{meta['dataset']['n_entrenamiento']} pacientes</dd></div>
+    <div><dt>Prueba</dt><dd>{meta['dataset']['n_prueba']} pacientes</dd></div>
+    <div><dt>Entrenado el</dt><dd>{fecha}</dd></div>
+  </dl>
+  <p class="cr-side-titulo">Grupo 13</p>
+  <ul>{integrantes}</ul>
+  <p style="margin-top:10px">Aprendizaje Automático, CUN<br>Docente: {PROYECTO['docente']}</p>
+  <p class="cr-side-aviso">Herramienta académica. No reemplaza el criterio médico ni un examen diagnóstico.</p>
+</div>""")
     st.caption(f"Origen: {origen_modelo}.")
-    st.markdown("---")
-    st.caption("Herramienta académica. No reemplaza el criterio médico ni un examen diagnóstico.")
 
-tab_pac, tab_datos, tab_modelo, tab_lote, tab_acerca = st.tabs(
-    ["🩺 Evaluar paciente", "📊 Explorar datos", "📈 Desempeño del modelo", "📁 Evaluación por lote", "ℹ️ Acerca del proyecto"]
-)
+# ---------------------------------------------------------------------------
+# Encabezado: marca, trazo de ECG y canales del monitor
+# ---------------------------------------------------------------------------
+primera_vez = not st.session_state.get("_intro_vista", False)
+st.session_state["_intro_vista"] = True
+mt = PRUEBA["metricas"]["tamizaje"]
+canales_inicio = [
+    canal("Pacientes", meta["dataset"]["n_pacientes"],
+          f"{meta['dataset']['n_entrenamiento']} para entrenar y {meta['dataset']['n_prueba']} para probar"),
+    canal("Variables clínicas", len(VARS), "edad, síntomas, signos y pruebas"),
+    canal("AUC en validación cruzada", num(meta["modelo"]["auc_cv"], 3), "promedio de 25 entrenamientos", "modelo"),
+    canal("AUC en prueba", num(PRUEBA["auc"], 3),
+          f"IC 95 %: {num(PRUEBA['ic95']['auc'][0], 3)} a {num(PRUEBA['ic95']['auc'][1], 3)}", "modelo"),
+    canal("Sensibilidad en tamizaje", pct(UMBRALES["tamizaje"]["sensibilidad_cv"], 0),
+          f"umbral {num(UMBRALES['tamizaje']['valor'], 2)}; en prueba detectó {int(mt['VP'])} de {int(mt['VP'] + mt['FN'])}",
+          "decision"),
+]
+bloque(f"""
+<div class="cr-intro cr-fila{' cr-anim' if primera_vez else ''}">
+<section class="cr-hero" aria-label="Presentación">
+  <ul class="cr-chips" aria-label="Contexto del proyecto">
+    <li>ACA 1</li><li>Grupo 13</li><li>Aprendizaje Automático</li><li>Especialización en IA, CUN</li>
+  </ul>
+  <div class="cr-marca" role="heading" aria-level="1">CardioRiesgo</div>
+  <svg class="cr-ecg" viewBox="0 0 1200 80" aria-hidden="true" focusable="false">
+    <path class="cr-traza" pathLength="1" d="{trazo_ecg()}"/>
+    <g class="cr-cabeza"><circle class="cr-onda" cx="1172" cy="56" r="4.5"/><circle class="cr-punto" cx="1172" cy="56" r="4.5"/></g>
+  </svg>
+  <p class="cr-lema">Estimamos la probabilidad de enfermedad coronaria de un paciente a partir de 13 variables clínicas,
+  con una regresión logística entrenada y evaluada con datos de 303 pacientes de la Cleveland Clinic.</p>
+</section>
+<div class="cr-canales cr-n5" aria-label="Resumen del estudio">{''.join(canales_inicio)}</div>
+</div>""")
+
+tab_pac, tab_datos, tab_modelo, tab_lote, tab_acerca = st.tabs([
+    ":material/monitor_heart: Evaluar paciente",
+    ":material/query_stats: Explorar datos",
+    ":material/tune: Umbral y desempeño",
+    ":material/table_view: Evaluación por lote",
+    ":material/menu_book: El proyecto",
+])
 
 # ---------------------------------------------------------------------------
 # Pestaña 1: evaluar un paciente
@@ -276,32 +562,35 @@ with tab_pac:
 
     with col_form:
         st.subheader("Datos del paciente")
-        b1, b2, _ = st.columns([1, 1, 0.6])
+        b1, b2 = st.columns(2)
         b1.button("Cargar ejemplo de riesgo bajo", on_click=cargar_ejemplo, args=("bajo",), width="stretch")
         b2.button("Cargar ejemplo de riesgo alto", on_click=cargar_ejemplo, args=("alto",), width="stretch")
-        st.caption("Los ejemplos son pacientes reales del conjunto de prueba (el modelo no los vio al entrenar).")
+        st.caption("Los ejemplos son pacientes reales del conjunto de prueba; el modelo no los vio al entrenar.")
 
-        st.markdown("**Datos generales y síntomas**")
-        c1, c2 = st.columns(2)
-        entrada("age", c1)
-        entrada("sex", c2)
-        entrada("cp", c1)
-        entrada("exang", c2)
+        with st.container(border=True):
+            rotulo("Datos generales y síntomas")
+            c1, c2 = st.columns(2)
+            entrada("age", c1)
+            entrada("sex", c2)
+            entrada("cp", c1)
+            entrada("exang", c2)
 
-        st.markdown("**Signos vitales y laboratorio**")
-        c1, c2, c3 = st.columns(3)
-        entrada("trestbps", c1)
-        entrada("chol", c2)
-        entrada("fbs", c3)
+        with st.container(border=True):
+            rotulo("Signos vitales y laboratorio")
+            c1, c2, c3 = st.columns(3)
+            entrada("trestbps", c1)
+            entrada("chol", c2)
+            entrada("fbs", c3)
 
-        st.markdown("**Pruebas diagnósticas**")
-        c1, c2 = st.columns(2)
-        entrada("restecg", c1)
-        entrada("thalach", c2)
-        entrada("oldpeak", c1)
-        entrada("slope", c2)
-        entrada("ca", c1)
-        entrada("thal", c2)
+        with st.container(border=True):
+            rotulo("Pruebas diagnósticas")
+            c1, c2 = st.columns(2)
+            entrada("restecg", c1)
+            entrada("thalach", c2)
+            entrada("oldpeak", c1)
+            entrada("slope", c2)
+            entrada("ca", c1)
+            entrada("thal", c2)
 
     paciente = pd.DataFrame([{v: st.session_state[f"in_{v}"] for v in VARS}])
     prob = float(predecir(paciente)[0])
@@ -317,34 +606,17 @@ with tab_pac:
                  "Estándar trata igual los dos errores y genera menos falsas alarmas (más especificidad).",
         )
         umbral = UMBRALES[criterio]["valor"]
-        alto = prob >= umbral
-        color_estado = ALERTA if alto else BIEN
-        texto_estado = "⚠️ Riesgo alto: se sugiere estudio cardiológico" if alto else "✅ Riesgo bajo según el modelo"
-
-        st.markdown(
-            f"""
-<div class="tarjeta">
-  <div class="hero-label">Probabilidad estimada de enfermedad coronaria</div>
-  <div class="hero">{pct(prob, 0)}</div>
-  <div class="estado" style="background:{color_estado}1a; color:{color_estado}; border:1px solid {color_estado}55;">{texto_estado}</div>
-  <div class="medidor">
-    <div class="medidor-relleno" style="width:{100 * prob:.1f}%; background:{color_estado};"></div>
-    <div class="medidor-umbral" style="left:calc({100 * umbral:.1f}% - 1px);" title="Umbral de decisión"></div>
-  </div>
-  <div class="medidor-escala"><span>0 %</span><span>umbral {pct(umbral, 0)}</span><span>100 %</span></div>
-</div>
-""",
-            unsafe_allow_html=True,
-        )
+        bloque(lectura(prob, umbral, criterio))
         ref = UMBRALES[criterio]
-        st.markdown(
-            f'<p class="texto-suave" style="margin-top:12px;">Con este criterio, en validación cruzada el modelo '
-            f"detectó al <b>{pct(ref['sensibilidad_cv'], 0)}</b> de los pacientes enfermos y descartó correctamente "
-            f"al <b>{pct(ref['especificidad_cv'], 0)}</b> de los sanos.</p>",
-            unsafe_allow_html=True,
+        bloque(
+            f'<p class="cr-nota">Con este criterio, en validación cruzada el modelo detectó al '
+            f"<b>{pct(ref['sensibilidad_cv'], 0)}</b> de los pacientes enfermos y descartó correctamente "
+            f"al <b>{pct(ref['especificidad_cv'], 0)}</b> de los sanos.</p>"
         )
 
-        # Explicación de la predicción
+    st.write("")
+    c_graf, c_guia = st.columns([1.45, 1], gap="large")
+    with c_graf:
         serie = aportes(paciente)
         top = serie.reindex(serie.abs().sort_values(ascending=False).index).head(8)[::-1]
         etiquetas = [f"{INFO[v]['etiqueta_corta']}: {etiqueta_valor(v, paciente.iloc[0][v])}" for v in top.index]
@@ -353,38 +625,36 @@ with tab_pac:
             x=top.values, y=etiquetas, orientation="h", marker_color=colores, width=0.55,
             hovertemplate="%{y}<br>Aporte: %{x:.2f} log-odds<extra></extra>",
         ))
-        fig.add_vline(x=0, line_color=GRIS_CLARO, line_width=1)
-        estilo(fig, alto=340, leyenda=False, titulo="Qué empujó el resultado")
-        fig.update_xaxes(title="← baja el riesgo · sube el riesgo →", showgrid=True, gridcolor=REJILLA,
-                         zeroline=False)
+        fig.add_vline(x=0, line_color=EJE, line_width=1)
+        estilo(fig, alto=360, leyenda=False, titulo="Qué empujó el resultado")
+        fig.update_xaxes(title="← baja el riesgo   ·   sube el riesgo →", showgrid=True, gridcolor=REJILLA)
         fig.update_yaxes(showgrid=False)
         mostrar(fig)
         st.caption("Aporte de cada variable al log-odds, comparado con el paciente promedio del entrenamiento.")
-
-    st.markdown(
-        '<div class="aviso">Este resultado es una estimación estadística hecha con datos de un solo hospital '
-        "(Cleveland Clinic), publicados en 1988. Sirve como apoyo académico y no reemplaza el criterio médico ni la angiografía.</div>",
-        unsafe_allow_html=True,
-    )
-    with st.expander("¿Cómo leer este resultado?"):
-        st.markdown(
-            "- La **probabilidad** sale de una regresión logística: el modelo suma el peso de cada variable y lo convierte en un valor entre 0 y 100 %.\n"
-            "- El **umbral** decide desde qué probabilidad se marca riesgo alto. En tamizaje lo bajamos para no dejar pasar enfermos, a costa de más falsas alarmas.\n"
-            "- El gráfico compara al paciente con el **paciente promedio** del entrenamiento. Las barras naranjas suben el riesgo y las azules lo bajan.\n"
-            "- El diagnóstico de referencia del dataset es la **angiografía coronaria**: estrechamiento mayor al 50 % en al menos un vaso principal."
-        )
+    with c_guia:
+        with st.container(border=True):
+            rotulo("Cómo leer este resultado")
+            st.markdown(
+                "- La **probabilidad** sale de una regresión logística: el modelo suma el peso de cada variable y lo convierte en un valor entre 0 y 100 %.\n"
+                "- El **umbral** decide desde qué probabilidad se marca riesgo alto. En tamizaje lo bajamos para no dejar pasar enfermos, a costa de más falsas alarmas.\n"
+                "- El gráfico compara al paciente con el **paciente promedio** del entrenamiento: las barras naranjas suben el riesgo y las azules lo bajan.\n"
+                "- El diagnóstico de referencia del dataset es la **angiografía coronaria**: estrechamiento mayor al 50 % en al menos un vaso principal."
+            )
+        aviso("Este resultado es una estimación estadística hecha con datos de un solo hospital (Cleveland Clinic), "
+              "publicados en 1988. Sirve como apoyo académico y no reemplaza el criterio médico ni la angiografía.")
 
 # ---------------------------------------------------------------------------
 # Pestaña 2: explorar los datos
 # ---------------------------------------------------------------------------
 with tab_datos:
     st.subheader("Exploración del dataset")
-    f1, f2, f3 = st.columns([1, 1.4, 1])
-    sexo_sel = f1.radio("Sexo", ["Todos", "Mujer", "Hombre"], horizontal=True)
-    edad_sel = f2.slider("Rango de edad", int(datos["age"].min()), int(datos["age"].max()),
-                         (int(datos["age"].min()), int(datos["age"].max())))
-    conj_sel = f3.radio("Conjunto", ["Todos", "entrenamiento", "prueba"], horizontal=True,
-                        format_func=lambda c: c.capitalize())
+    with st.container(border=True):
+        f1, f2, f3 = st.columns([1, 1.3, 1.3])
+        sexo_sel = f1.radio("Sexo", ["Todos", "Mujer", "Hombre"], horizontal=True)
+        edad_sel = f2.slider("Rango de edad", int(datos["age"].min()), int(datos["age"].max()),
+                             (int(datos["age"].min()), int(datos["age"].max())))
+        conj_sel = f3.radio("Conjunto", ["Todos", "entrenamiento", "prueba"], horizontal=True,
+                            format_func=lambda c: c.capitalize())
 
     vista = datos.copy()
     if sexo_sel != "Todos":
@@ -394,32 +664,35 @@ with tab_datos:
         vista = vista[vista["conjunto"] == conj_sel]
 
     if vista.empty:
-        st.warning("No hay pacientes con esa combinación de filtros.")
+        st.warning("No hay pacientes con esa combinación de filtros. Amplíe el rango de edad o cambie el sexo.")
     else:
-        k1, k2, k3, k4 = st.columns(4)
-        k1.markdown(tarjeta_kpi("Pacientes", f"{len(vista):,}".replace(",", ".")), unsafe_allow_html=True)
-        k2.markdown(tarjeta_kpi("Con enfermedad", pct(vista["enfermedad"].mean()),
-                                f"{int(vista['enfermedad'].sum())} pacientes"), unsafe_allow_html=True)
-        k3.markdown(tarjeta_kpi("Edad mediana", f"{num(vista['age'].median(), 0)} años"), unsafe_allow_html=True)
-        k4.markdown(tarjeta_kpi("Frecuencia cardiaca máx. mediana", f"{num(vista['thalach'].median(), 0)} lpm"),
-                    unsafe_allow_html=True)
-        st.write("")
+        fila_canales([
+            canal("Pacientes", f"{len(vista):,}".replace(",", ".")),
+            canal("Con enfermedad", pct(vista["enfermedad"].mean()), f"{int(vista['enfermedad'].sum())} pacientes"),
+            canal("Edad mediana", f"{num(vista['age'].median(), 0)} años"),
+            canal("FC máxima mediana", f"{num(vista['thalach'].median(), 0)} lpm", "frecuencia cardiaca en esfuerzo"),
+        ])
 
         def tasa_por(var):
             t = vista.groupby(var, dropna=True)["enfermedad"].agg(["mean", "count"]).reset_index()
             t["Categoría"] = [etiqueta_valor(var, v) for v in t[var]]
+            if var == "ca":
+                t["Categoría"] = [f"{c} vaso" if c == "1" else f"{c} vasos" for c in t["Categoría"]]
             return t
 
         def barra_tasa(var, titulo):
+            """Barras horizontales: las etiquetas largas se leen sin rotarlas."""
             t = tasa_por(var)
             fig = go.Figure(go.Bar(
-                x=t["Categoría"], y=100 * t["mean"], marker_color=AZUL, width=0.5,
+                y=t["Categoría"], x=100 * t["mean"], orientation="h", marker_color=AZUL, width=0.55,
                 text=[pct(v, 0) for v in t["mean"]], textposition="outside", textfont=dict(color=TINTA_2),
-                customdata=t["count"],
-                hovertemplate="%{x}<br>Con enfermedad: %{y:.1f} %<br>Pacientes: %{customdata}<extra></extra>",
+                customdata=t["count"], cliponaxis=False,
+                hovertemplate="%{y}<br>Con enfermedad: %{x:.1f} %<br>Pacientes: %{customdata}<extra></extra>",
             ))
-            estilo(fig, alto=320, leyenda=False, titulo=titulo)
-            fig.update_yaxes(title="% con enfermedad", range=[0, 105])
+            estilo(fig, alto=300, leyenda=False, titulo=titulo)
+            fig.update_xaxes(title="% con enfermedad", range=[0, 118], showgrid=True, gridcolor=REJILLA,
+                             tickvals=[0, 25, 50, 75, 100])
+            fig.update_yaxes(autorange="reversed", showgrid=False, ticks="")
             return fig
 
         g1, g2 = st.columns(2)
@@ -441,7 +714,7 @@ with tab_datos:
                 sub = vista[vista["enfermedad"] == val]
                 fig.add_trace(go.Scatter(
                     x=sub["age"], y=sub["thalach"], mode="markers", name=dx,
-                    marker=dict(color=COLOR_DX[dx], size=8, line=dict(color=FONDO, width=1.5), opacity=0.85),
+                    marker=dict(color=COLOR_DX[dx], size=8, line=dict(color=PANEL, width=1.5), opacity=0.9),
                     hovertemplate="Edad %{x} · FC máx. %{y} lpm<extra>" + dx + "</extra>"))
             estilo(fig, titulo="Frecuencia cardiaca máxima frente a edad")
             fig.update_xaxes(title="Edad (años)")
@@ -462,8 +735,8 @@ with tab_datos:
             for dx, val in [("Sin enfermedad", 0), ("Con enfermedad", 1)]:
                 sub = vista[vista["enfermedad"] == val]
                 fig.add_trace(go.Box(y=sub["oldpeak"], name=dx, marker_color=COLOR_DX[dx], boxmean=False,
-                                     line=dict(width=1.5)))
-            estilo(fig, leyenda=False, titulo="Depresión del ST según diagnóstico")
+                                     line=dict(width=1.5), fillcolor=rgba(COLOR_DX[dx], 0.2)))
+            estilo(fig, alto=370, leyenda=False, titulo="Depresión del ST según diagnóstico")
             fig.update_yaxes(title="Depresión del ST (mm)")
             mostrar(fig)
         with g7:
@@ -472,13 +745,14 @@ with tab_datos:
             nombres = [INFO[c]["etiqueta_corta"] if c in INFO else "Enfermedad" for c in cols_corr]
             fig = go.Figure(go.Heatmap(
                 z=corr.values, x=nombres, y=nombres, zmin=-1, zmax=1,
-                colorscale=[[0, AZUL], [0.5, "#f0efec"], [1, NARANJA]],
+                colorscale=[[0, "#2a62ad"], [0.5, "#222c42"], [1, "#b04d1b"]],
                 text=[[num(round(v, 2) + 0.0, 2) for v in fila] for fila in corr.values], texttemplate="%{text}",
                 textfont=dict(size=11, color=TINTA), xgap=2, ygap=2,
-                hovertemplate="%{y} · %{x}<br>r = %{z:.2f}<extra></extra>", colorbar=dict(thickness=10)))
-            estilo(fig, alto=360, leyenda=False, titulo="Correlación entre variables numéricas")
-            fig.update_xaxes(tickangle=-30, showgrid=False)
-            fig.update_yaxes(autorange="reversed", showgrid=False)
+                hovertemplate="%{y} · %{x}<br>r = %{z:.2f}<extra></extra>",
+                colorbar=dict(thickness=10, outlinewidth=0, tickfont=dict(color=TINTA_3))))
+            estilo(fig, alto=370, leyenda=False, titulo="Correlación entre variables numéricas")
+            fig.update_xaxes(tickangle=-30, showgrid=False, linecolor="rgba(0,0,0,0)", ticks="")
+            fig.update_yaxes(autorange="reversed", showgrid=False, linecolor="rgba(0,0,0,0)")
             mostrar(fig)
 
         with st.expander("Ver tabla de pacientes"):
@@ -486,20 +760,20 @@ with tab_datos:
             tabla["diagnóstico"] = tabla["enfermedad"].map({0: "Sin enfermedad", 1: "Con enfermedad"})
             st.dataframe(tabla.drop(columns="enfermedad"), hide_index=True, height=320)
             st.download_button("Descargar selección (CSV)", tabla.to_csv(index=False).encode("utf-8"),
-                               "pacientes_filtrados.csv", "text/csv")
+                               "pacientes_filtrados.csv", "text/csv", icon=":material/download:")
 
 # ---------------------------------------------------------------------------
-# Pestaña 3: desempeño del modelo
+# Pestaña 3: umbral y desempeño del modelo
 # ---------------------------------------------------------------------------
 with tab_modelo:
     st.subheader("¿Qué tan bien funciona el modelo?")
-    prueba = meta["prueba"]
-    y_true = np.array(prueba["y_true"])
-    y_prob = np.array(prueba["y_proba"])
+    y_true = np.array(PRUEBA["y_true"])
+    y_prob = np.array(PRUEBA["y_proba"])
 
-    umbral_sel = st.slider("Umbral de decisión para el conjunto de prueba", 0.05, 0.95,
-                           float(UMBRALES["tamizaje"]["valor"]), 0.01,
-                           help="Mueva el umbral y observe cómo cambian la matriz de confusión y las métricas.")
+    with st.container(border=True):
+        umbral_sel = st.slider("Umbral de decisión para el conjunto de prueba", 0.05, 0.95,
+                               float(UMBRALES["tamizaje"]["valor"]), 0.01,
+                               help="Mueva el umbral y observe cómo cambian la matriz de confusión y las métricas.")
     pred = (y_prob >= umbral_sel).astype(int)
     vp = int(((pred == 1) & (y_true == 1)).sum())
     vn = int(((pred == 0) & (y_true == 0)).sum())
@@ -512,13 +786,14 @@ with tab_modelo:
     exac = (vp + vn) / total
     f1 = 2 * prec * sens / (prec + sens) if prec + sens else 0
 
-    m = st.columns(6)
-    m[0].markdown(tarjeta_kpi("Exactitud", pct(exac), f"{vp + vn} de {total} aciertos"), unsafe_allow_html=True)
-    m[1].markdown(tarjeta_kpi("Sensibilidad", pct(sens), f"{vp} de {vp + fn} enfermos"), unsafe_allow_html=True)
-    m[2].markdown(tarjeta_kpi("Especificidad", pct(espec), f"{vn} de {vn + fp} sanos"), unsafe_allow_html=True)
-    m[3].markdown(tarjeta_kpi("Precisión", pct(prec), "de las alertas"), unsafe_allow_html=True)
-    m[4].markdown(tarjeta_kpi("F1", num(f1, 3)), unsafe_allow_html=True)
-    m[5].markdown(tarjeta_kpi("AUC ROC", num(prueba["auc"], 3), "no depende del umbral"), unsafe_allow_html=True)
+    fila_canales([
+        canal("Exactitud", pct(exac), f"{vp + vn} de {total} aciertos", "modelo"),
+        canal("Sensibilidad", pct(sens), f"{vp} de {vp + fn} enfermos detectados", "modelo"),
+        canal("Especificidad", pct(espec), f"{vn} de {vn + fp} sanos descartados", "modelo"),
+        canal("Precisión", pct(prec), "de las alertas son enfermos", "modelo"),
+        canal("F1", num(f1, 3), "equilibrio entre las dos", "modelo"),
+        canal("AUC ROC", num(PRUEBA["auc"], 3), "no depende del umbral", "modelo"),
+    ])
     st.caption(f"Conjunto de prueba: {total} pacientes que el modelo no vio durante el entrenamiento.")
 
     c1, c2 = st.columns(2)
@@ -529,24 +804,27 @@ with tab_modelo:
         fig = go.Figure(go.Heatmap(
             z=z, x=["Predicho: sin enfermedad", "Predicho: con enfermedad"],
             y=["Real: sin enfermedad", "Real: con enfermedad"],
-            colorscale=[[0, "#f3f7fd"], [1, "#86b6ef"]], showscale=False,
+            colorscale=[[0, "#14223d"], [1, "#2c64b0"]], showscale=False,
             text=textos, texttemplate="%{text}", textfont=dict(size=14, color=TINTA),
-            hovertemplate="%{y} · %{x}: %{z}<extra></extra>", xgap=3, ygap=3))
-        estilo(fig, alto=360, leyenda=False, titulo=f"Matriz de confusión (umbral {pct(umbral_sel, 0)})")
-        fig.update_yaxes(autorange="reversed", showgrid=False)
-        fig.update_xaxes(showgrid=False)
+            hovertemplate="%{y} · %{x}: %{z}<extra></extra>", xgap=4, ygap=4))
+        estilo(fig, alto=370, leyenda=False, titulo=f"Matriz de confusión (umbral {pct(umbral_sel, 0)})")
+        fig.update_yaxes(autorange="reversed", showgrid=False, linecolor="rgba(0,0,0,0)")
+        fig.update_xaxes(showgrid=False, linecolor="rgba(0,0,0,0)", ticks="")
         mostrar(fig)
     with c2:
-        roc = prueba["roc"]
+        roc = PRUEBA["roc"]
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color=GRIS_CLARO, width=1),
-                                 name="Azar", hoverinfo="skip"))
+        fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color=GRIS_BARRA, width=1, dash="dot"),
+                                 name="Azar", hoverinfo="skip", showlegend=False))
         fig.add_trace(go.Scatter(x=roc["fpr"], y=roc["tpr"], mode="lines", line=dict(color=AZUL, width=2.5),
-                                 name=f"Regresión logística (AUC {num(prueba['auc'], 3)})",
+                                 fill="tozeroy", fillcolor="rgba(66,146,244,0.08)",
+                                 name=f"Regresión logística (AUC {num(PRUEBA['auc'], 3)})",
                                  hovertemplate="1 - especificidad: %{x:.2f}<br>Sensibilidad: %{y:.2f}<extra></extra>"))
         fig.add_trace(go.Scatter(x=[1 - espec], y=[sens], mode="markers", name="Umbral elegido",
-                                 marker=dict(color=NARANJA, size=11, line=dict(color="white", width=2))))
-        estilo(fig, alto=360, titulo="Curva ROC en el conjunto de prueba")
+                                 marker=dict(color=AMBAR, size=12, line=dict(color=PANEL, width=2))))
+        estilo(fig, alto=370, titulo="Curva ROC en el conjunto de prueba")
+        fig.update_layout(legend=dict(orientation="v", x=0.98, xanchor="right", y=0.04, yanchor="bottom",
+                                      bgcolor=rgba(PANEL_2, 0.9), bordercolor=BORDE, borderwidth=1))
         fig.update_xaxes(title="1 - especificidad (falsas alarmas)", range=[-0.02, 1.02])
         fig.update_yaxes(title="Sensibilidad", range=[-0.02, 1.05])
         mostrar(fig)
@@ -555,16 +833,17 @@ with tab_modelo:
     with c3:
         cv = pd.DataFrame(meta["comparacion_cv"]).sort_values("roc_auc")
         elegido = meta["modelo"]["nombre"]
-        colores = [AZUL if n == elegido else GRIS_CLARO for n in cv["modelo"]]
+        colores = [AZUL if n == elegido else GRIS_BARRA for n in cv["modelo"]]
         fig = go.Figure(go.Bar(
             x=cv["roc_auc"], y=cv["modelo"], orientation="h", marker_color=colores, width=0.55,
-            error_x=dict(type="data", array=cv["roc_auc_sd"], color=GRIS, thickness=1, width=4),
+            error_x=dict(type="data", array=cv["roc_auc_sd"], color=TINTA_3, thickness=1, width=4),
             customdata=cv["roc_auc_sd"],
             hovertemplate="%{y}<br>AUC promedio: %{x:.3f} ± %{customdata:.3f}<extra></extra>"))
         for fila in cv.itertuples():
             fig.add_annotation(x=fila.roc_auc + fila.roc_auc_sd + 0.008, y=fila.modelo, text=num(fila.roc_auc, 3),
-                               xanchor="left", showarrow=False, font=dict(size=12, color=TINTA_2))
-        estilo(fig, alto=360, leyenda=False, titulo="Comparación de 7 modelos (validación cruzada 5×5)")
+                               xanchor="left", showarrow=False,
+                               font=dict(size=12, color=TINTA if fila.modelo == elegido else TINTA_2))
+        estilo(fig, alto=370, leyenda=False, titulo="Comparación de 7 modelos (validación cruzada 5×5)")
         fig.update_xaxes(title="AUC ROC promedio (± desviación estándar)", range=[0.5, 1.03], showgrid=True,
                          gridcolor=REJILLA)
         fig.update_yaxes(showgrid=False)
@@ -577,12 +856,12 @@ with tab_modelo:
         fig.add_trace(go.Scatter(x=oof["umbral"], y=oof["especificidad"], name="Especificidad",
                                  line=dict(color=AZUL, width=2.5)))
         for c in ("tamizaje", "balanceado"):
-            fig.add_vline(x=UMBRALES[c]["valor"], line_color=GRIS, line_width=1)
-            fig.add_annotation(x=UMBRALES[c]["valor"], y=0.04, xanchor="left", xshift=4, showarrow=False,
+            fig.add_vline(x=UMBRALES[c]["valor"], line_color=AMBAR, line_width=1, line_dash="dot")
+            fig.add_annotation(x=UMBRALES[c]["valor"], y=0.04, xanchor="left", xshift=5, showarrow=False,
                                text=f"{UMBRALES[c]['nombre']} {num(UMBRALES[c]['valor'], 2)}",
                                font=dict(size=11, color=TINTA_2))
-        estilo(fig, alto=360, titulo="Sensibilidad y especificidad según el umbral (validación cruzada)")
-        fig.update_xaxes(title="Umbral de decisión", range=[0.05, 0.95])
+        estilo(fig, alto=370, titulo="Sensibilidad y especificidad según el umbral")
+        fig.update_xaxes(title="Umbral de decisión (validación cruzada)", range=[0.05, 0.95])
         fig.update_yaxes(title="Proporción", range=[0, 1.05])
         mostrar(fig)
 
@@ -597,8 +876,8 @@ with tab_modelo:
         fig.add_annotation(x=fila.log_or + (0.04 if fila.log_or > 0 else -0.04), y=fila.etiqueta_corta,
                            text=num(fila.odds_ratio, 2), showarrow=False,
                            xanchor="left" if fila.log_or > 0 else "right", font=dict(size=12, color=TINTA_2))
-    fig.add_vline(x=0, line_color=GRIS_CLARO, line_width=1)
-    estilo(fig, alto=430, leyenda=False, titulo="Odds ratios del modelo (10 mayores)")
+    fig.add_vline(x=0, line_color=EJE, line_width=1)
+    estilo(fig, alto=440, leyenda=False, titulo="Odds ratios del modelo (los 10 mayores)")
     fig.update_xaxes(title="Odds ratio en escala logarítmica (1 = sin efecto; >1 sube el riesgo, <1 lo baja)",
                      tickvals=list(np.log(marcas_or)), ticktext=[num(v, 2).rstrip("0").rstrip(",") for v in marcas_or],
                      range=[np.log(0.45), np.log(3.8)], showgrid=True, gridcolor=REJILLA)
@@ -615,25 +894,23 @@ with tab_modelo:
         st.dataframe(tabla.style.format({c: "{:.3f}" for c in tabla.columns if c != "Modelo"}, decimal=","),
                      hide_index=True)
         st.markdown(f"La validación cruzada estima un AUC de **{num(meta['modelo']['auc_cv'], 3)}** para pacientes nuevos. "
-                    f"En la prueba salió {num(prueba['auc'], 3)}: con solo {total} pacientes la cifra varía bastante "
-                    f"(intervalo de confianza 95 %: {num(prueba['ic95']['auc'][0], 3)} a {num(prueba['ic95']['auc'][1], 3)}).")
+                    f"En la prueba salió {num(PRUEBA['auc'], 3)}: con solo {total} pacientes la cifra varía bastante "
+                    f"(intervalo de confianza 95 %: {num(PRUEBA['ic95']['auc'][0], 3)} a {num(PRUEBA['ic95']['auc'][1], 3)}).")
 
 # ---------------------------------------------------------------------------
 # Pestaña 4: evaluación por lote
 # ---------------------------------------------------------------------------
 with tab_lote:
     st.subheader("Evaluar varios pacientes con un archivo CSV")
-    st.markdown(
-        '<p class="texto-suave">El archivo debe tener una fila por paciente y las 13 columnas del dataset con los '
-        "códigos originales de UCI. Descargue la plantilla para ver el formato.</p>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("El archivo debe tener una fila por paciente y las 13 columnas del dataset con los códigos originales "
+                "de UCI. Descargue la plantilla para ver el formato.")
     plantilla = pd.read_csv(RUTA_PLANTILLA)
-    c1, c2 = st.columns([1, 2])
-    c1.download_button("Descargar plantilla CSV", plantilla.to_csv(index=False).encode("utf-8"),
-                       "plantilla_pacientes.csv", "text/csv", width="stretch")
-    usar_plantilla = c1.toggle("Probar con la plantilla de ejemplo")
-    archivo = c2.file_uploader("Subir archivo CSV", type=["csv"])
+    with st.container(border=True):
+        c1, c2 = st.columns([1, 2], gap="large")
+        c1.download_button("Descargar plantilla CSV", plantilla.to_csv(index=False).encode("utf-8"),
+                           "plantilla_pacientes.csv", "text/csv", width="stretch", icon=":material/download:")
+        usar_plantilla = c1.toggle("Probar con la plantilla de ejemplo")
+        archivo = c2.file_uploader("Subir archivo CSV", type=["csv"])
 
     with st.expander("Códigos de cada columna"):
         filas = []
@@ -653,14 +930,14 @@ with tab_lote:
         try:
             lote = pd.read_csv(archivo)
         except Exception as e:
-            st.error(f"No se pudo leer el archivo: {e}")
+            st.error(f"No se pudo leer el archivo: {e}. Revise que sea un CSV separado por comas.")
     elif usar_plantilla:
         lote = plantilla.copy()
 
     if lote is not None:
         faltantes = [v for v in VARS if v not in lote.columns]
         if faltantes:
-            st.error("Faltan columnas: " + ", ".join(faltantes))
+            st.error("Faltan columnas: " + ", ".join(faltantes) + ". Use la plantilla como guía.")
         else:
             errores = []
             for v in VARS:
@@ -690,40 +967,51 @@ with tab_lote:
                            f"(umbral {pct(umbral_lote, 0)}): {n_alto} con riesgo alto.")
                 st.dataframe(salida, hide_index=True)
                 st.download_button("Descargar resultados (CSV)", salida.to_csv(index=False).encode("utf-8"),
-                                   "resultados_cardioriesgo.csv", "text/csv")
+                                   "resultados_cardioriesgo.csv", "text/csv", icon=":material/download:")
 
 # ---------------------------------------------------------------------------
-# Pestaña 5: acerca del proyecto
+# Pestaña 5: el proyecto
 # ---------------------------------------------------------------------------
 with tab_acerca:
-    p = meta["proyecto"]
+    ds = meta["dataset"]
+    st.subheader("El proyecto")
+    bloque(f"""
+<div class="cr-fichas">
+  <div class="cr-ficha"><p class="cr-ficha-titulo">La pregunta</p><p>{PROYECTO['pregunta']}</p></div>
+  <div class="cr-ficha"><p class="cr-ficha-titulo">Los datos</p><p><b>{ds['n_pacientes']} pacientes</b> de la Cleveland Clinic, publicados
+    en 1988, con 13 variables clínicas cada uno. La etiqueta viene de la angiografía coronaria: hay enfermedad si al
+    menos un vaso principal tiene un estrechamiento mayor al 50 %. El <b>{pct(ds['prevalencia'])}</b> de los pacientes
+    la tiene.</p></div>
+  <div class="cr-ficha"><p class="cr-ficha-titulo">La decisión</p><p>Un falso negativo manda a casa a un paciente enfermo sin estudio. Por eso,
+    además del umbral estándar de {num(UMBRALES['balanceado']['valor'], 2)}, ofrecemos uno de tamizaje de
+    {num(UMBRALES['tamizaje']['valor'], 2)} que en validación cruzada detecta al <b>{pct(UMBRALES['tamizaje']['sensibilidad_cv'], 0)}</b>
+    de los enfermos, a cambio de más falsas alarmas.</p></div>
+</div>""")
+
+    st.subheader("Ruta metodológica")
+    bloque("""
+<ol class="cr-pasos">
+  <li><strong>Exploración</strong><span>Distribuciones, relación de cada variable con el diagnóstico y correlaciones.</span></li>
+  <li><strong>Calidad y limpieza</strong><span>6 valores faltantes (4 en vasos coloreados y 2 en talio), imputados dentro del pipeline.</span></li>
+  <li><strong>Modelado</strong><span>7 modelos clásicos con validación cruzada 5×5 y búsqueda de hiperparámetros.</span></li>
+  <li><strong>Evaluación</strong><span>61 pacientes de prueba, intervalos bootstrap y elección del umbral de tamizaje.</span></li>
+  <li><strong>Despliegue</strong><span>Esta aplicación, publicada en Streamlit Community Cloud.</span></li>
+</ol>""")
+
     c1, c2 = st.columns([1.3, 1], gap="large")
     with c1:
-        st.subheader("Sobre el proyecto")
-        st.markdown(f"**Objetivo.** {p['objetivo']}")
-        st.markdown(f"**Pregunta orientadora.** {p['pregunta']}")
-        st.markdown(
-            f"**Datos.** {meta['dataset']['nombre']}: {meta['dataset']['n_pacientes']} pacientes de la Cleveland Clinic "
-            f"y 13 variables clínicas. La etiqueta viene de la angiografía coronaria "
-            f"({pct(meta['dataset']['prevalencia'])} de los pacientes con enfermedad)."
-        )
-        st.markdown("**Ruta metodológica**")
-        pasos = ["Exploración y EDA", "Calidad y limpieza", "Modelado clásico (7 modelos)",
-                 "Evaluación y umbral", "Despliegue en Streamlit"]
-        st.markdown(" → ".join(f"**{i}.** {p}" for i, p in enumerate(pasos, start=1)))
-        st.markdown("**Referencias**")
-        for r in p["referencias"]:
+        st.subheader("Objetivo")
+        st.markdown(PROYECTO["objetivo"])
+        st.subheader("Referencias")
+        for r in PROYECTO["referencias"]:
             st.markdown(f"- {r}")
     with c2:
         st.subheader("Grupo 13")
-        st.markdown("\n".join(f"- {n}" for n in p["integrantes"]))
-        st.markdown(f"Especialización en Inteligencia Artificial · CUN  \nAprendizaje Automático · {p['docente']}")
-        enlaces = p.get("enlaces", {})
-        st.markdown("**Enlaces**")
+        st.markdown("\n".join(f"- {n}" for n in PROYECTO["integrantes"]))
+        st.markdown(f"Especialización en Inteligencia Artificial, CUN  \nAprendizaje Automático, {PROYECTO['docente']}")
+        enlaces = PROYECTO.get("enlaces", {})
+        st.subheader("Enlaces")
         for nombre, url in [("Aplicación", enlaces.get("app")), ("Video de sustentación", enlaces.get("video")),
                             ("Repositorio", enlaces.get("repositorio"))]:
             st.markdown(f"- {nombre}: {url if url else 'pendiente'}")
-        st.markdown(
-            '<div class="aviso">Proyecto académico. El modelo no está validado para uso clínico.</div>',
-            unsafe_allow_html=True,
-        )
+        aviso("Proyecto académico. El modelo no está validado para uso clínico.")
