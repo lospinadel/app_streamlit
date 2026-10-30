@@ -24,7 +24,7 @@
  },
  "dataset": {
   "nombre": "UCI Heart Disease (Cleveland)",
-  "fuente": "copia espejo en GitHub de processed.cleveland.data (UCI)",
+  "fuente": "copia local del archivo UCI (datos/processed.cleveland.data)",
   "url": "https://archive.ics.uci.edu/dataset/45/heart+disease",
   "n_pacientes": 303,
   "n_entrenamiento": 242,
@@ -1410,5 +1410,5 @@
   "pandas": "3.0.5",
   "numpy": "2.5.3"
  },
- "fecha_entrenamiento": "2026-10-29"
+ "fecha_entrenamiento": "2026-10-30"
 }

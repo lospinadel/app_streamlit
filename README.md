@@ -1,7 +1,8 @@
 # CardioRiesgo · ACA 1 Aprendizaje Automático (CUN) · Grupo 13
 
 Aplicación en Streamlit que estima la probabilidad de enfermedad coronaria con una regresión logística
-entrenada con el dataset UCI Heart Disease (Cleveland, 303 pacientes).
+entrenada con el dataset UCI Heart Disease (Cleveland, 303 pacientes). Permite comparar otros cuatro
+modelos (SVM, Random Forest, KNN y árbol de decisión) y ver un modelo aprender en vivo.
 
 - AUC en validación cruzada: 0.901
 - AUC en el conjunto de prueba (61 pacientes): 0.961
@@ -16,6 +17,7 @@ entrenada con el dataset UCI Heart Disease (Cleveland, 303 pacientes).
 - `data/heart_clean.csv`: datos limpios con la marca de entrenamiento o prueba.
 - `data/plantilla_pacientes.csv`: ejemplo para la evaluación por lote.
 - `.streamlit/config.toml`: temas claro y oscuro, colores y tipografías de la interfaz.
+- `assets/cun.png`: logo de la CUN que aparece en el encabezado.
 
 ## Ejecutar en el computador
 
