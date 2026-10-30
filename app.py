@@ -97,11 +97,15 @@ CSS_GRAFICOS = "\n".join(
     for oscuro, claro in GRAFICO_CLARO.items() for prop in ("fill", "stroke"))
 
 CSS = """
-.block-container, [data-testid="stMainBlockContainer"] {max-width: 1240px; padding-top: 4.2rem; padding-bottom: 3rem;}
+/* Escala fluida (mobile-first): hasta 1600 px de ancho la base es 16 px; en monitores grandes
+   y televisores crece hasta 30 px, y el ancho del contenido (en rem) crece con ella */
+html {font-size: clamp(16px, calc(16px + (100vw - 1600px) * 0.0075), 30px) !important;}
+.block-container, [data-testid="stMainBlockContainer"] {max-width: min(100%, 100rem);
+  padding: 4.2rem clamp(1rem, 3.5vw, 4rem) 3rem;}
 [data-testid="stHeading"] h3 {font-weight: 600; font-size: 1.45rem;}
 
 /* Encabezado: marca, trazo de ECG y canales del monitor */
-section.cr-hero {position: relative; padding: 22px 28px 20px; border: 1px solid var(--cr-borde);
+section.cr-hero {position: relative; padding: 1.375rem 1.75rem 1.25rem; border: 1px solid var(--cr-borde);
   border-radius: 18px; background: var(--cr-hero); overflow: hidden; margin: 0;}
 section.cr-hero::before {content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image: linear-gradient(var(--cr-cuadricula) 1px, transparent 1px),
@@ -110,14 +114,14 @@ section.cr-hero::before {content: ""; position: absolute; inset: 0; pointer-even
                     linear-gradient(90deg, var(--cr-cuadricula-fina) 1px, transparent 1px);
   background-size: 30px 30px, 30px 30px, 6px 6px, 6px 6px;}
 section.cr-hero > * {position: relative;}
-section.cr-hero ul.cr-chips {display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0 0 12px; padding: 0;}
-section.cr-hero ul.cr-chips li {margin: 0; padding: 5px 11px; font-size: .84rem; line-height: 1.2; color: var(--cr-tinta-2);
+section.cr-hero ul.cr-chips {display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0 0 0.75rem; padding: 0;}
+section.cr-hero ul.cr-chips li {margin: 0; padding: 0.3125rem 0.6875rem; font-size: .84rem; line-height: 1.2; color: var(--cr-tinta-2);
   border: 1px solid var(--cr-borde-2); border-radius: 999px; background: var(--cr-panel-2);}
 section.cr-hero ul.cr-chips li::marker {content: none;}
 section.cr-hero div.cr-marca {font-family: var(--cr-cifras); font-weight: 700; font-stretch: 125%;
   font-variation-settings: "wdth" 125; font-size: clamp(2.5rem, 3.2vw + 1.2rem, 4rem); line-height: 1;
   letter-spacing: -0.01em; color: var(--cr-tinta); margin: 0; padding: 0;}
-section.cr-hero svg.cr-ecg {display: block; width: 100%; height: auto; margin: 6px 0 4px; overflow: visible;}
+section.cr-hero svg.cr-ecg {display: block; width: 100%; height: auto; margin: 0.375rem 0 0.25rem; overflow: visible;}
 section.cr-hero .cr-traza {fill: none; stroke: var(--cr-traza); stroke-width: 2.6; stroke-linecap: round;
   stroke-linejoin: round; filter: drop-shadow(0 0 5px var(--cr-brillo-traza));}
 section.cr-hero .cr-punto {fill: var(--cr-traza);}
@@ -126,22 +130,22 @@ section.cr-hero .cr-onda {fill: none; stroke: var(--cr-traza); stroke-width: 1.6
 section.cr-hero p.cr-lema {color: var(--cr-tinta-2); font-size: 1.04rem; line-height: 1.55; max-width: 68ch; margin: 0;}
 
 div.cr-fila {container-type: inline-size;}
-div.cr-canales {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0 10px;}
+div.cr-canales {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 0.875rem 0 0.625rem;}
 div.cr-canales.cr-n5 > .cr-canal:last-child {grid-column: 1 / -1;}
-@container (min-width: 620px) {
+@container (min-width: 38.75rem) {
   div.cr-canales.cr-n4 {grid-template-columns: repeat(4, minmax(0, 1fr));}
   div.cr-canales.cr-n6 {grid-template-columns: repeat(3, minmax(0, 1fr));}
 }
-@container (min-width: 760px) {
+@container (min-width: 47.5rem) {
   div.cr-canales.cr-n5 {grid-template-columns: repeat(5, minmax(0, 1fr));}
   div.cr-canales.cr-n5 > .cr-canal:last-child {grid-column: auto;}
 }
-@container (min-width: 960px) {
+@container (min-width: 60rem) {
   div.cr-canales.cr-n6 {grid-template-columns: repeat(6, minmax(0, 1fr));}
   div.cr-canales.cr-n6 .cr-canal-valor {font-size: 1.8rem;}
 }
-div.cr-canales .cr-canal {position: relative; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 4px;
-  align-content: start; padding: 13px 15px 12px; background: var(--cr-panel); border: 1px solid var(--cr-borde);
+div.cr-canales .cr-canal {position: relative; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0.25rem;
+  align-content: start; padding: 0.8125rem 0.9375rem 0.75rem; background: var(--cr-panel); border: 1px solid var(--cr-borde);
   border-radius: 12px; overflow: hidden; min-width: 0;}
 div.cr-canales .cr-canal::before {content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--canal);}
 div.cr-canales .cr-canal-nombre {font-size: .88rem; line-height: 1.3; color: var(--cr-tinta-2); align-self: start;}
@@ -168,75 +172,83 @@ div.cr-anim .cr-canal:nth-child(5) {animation-delay: .79s;}
 @keyframes cr-latido {from {transform: scale(1); opacity: .75;} to {transform: scale(3.2); opacity: 0;}}
 
 /* Lectura del riesgo */
-div.cr-lectura {--estado: var(--cr-verde); position: relative; padding: 16px 20px 14px; background: var(--cr-panel);
+div.cr-lectura {--estado: var(--cr-verde); position: relative; padding: 1rem 1.25rem 0.875rem; background: var(--cr-panel);
   border: 1px solid var(--cr-borde); border-radius: 16px; overflow: hidden;}
 div.cr-lectura.cr-alto {--estado: var(--cr-rojo);}
 div.cr-lectura::before {content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--estado);}
-div.cr-lectura .cr-lectura-cab {display: flex; justify-content: space-between; align-items: center; gap: 8px 14px;
+div.cr-lectura .cr-lectura-cab {display: flex; justify-content: space-between; align-items: center; gap: 0.5rem 0.875rem;
   flex-wrap: wrap; font-size: .92rem; color: var(--cr-tinta-2);}
-div.cr-lectura .cr-criterio {font-size: .82rem; color: var(--cr-tinta); padding: 4px 10px; border-radius: 999px;
+div.cr-lectura .cr-criterio {font-size: .82rem; color: var(--cr-tinta); padding: 0.25rem 0.625rem; border-radius: 999px;
   border: 1px solid var(--cr-borde-2); background: var(--cr-panel-2); white-space: nowrap;}
 div.cr-lectura .cr-lectura-valor {font-family: var(--cr-cifras); font-weight: 600; font-size: clamp(4rem, 5vw + 1.4rem, 5.6rem);
-  line-height: 1; margin: 14px 0 12px; color: var(--estado); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  line-height: 1; margin: 0.875rem 0 0.75rem; color: var(--estado); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
   text-shadow: 0 0 28px light-dark(rgba(0, 0, 0, 0), color-mix(in srgb, var(--estado) 40%, transparent));}
 div.cr-lectura .cr-unidad {font-size: .4em; font-weight: 500; margin-left: .14em; color: var(--cr-tinta-2); text-shadow: none;}
-div.cr-lectura .cr-estado {display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+div.cr-lectura .cr-estado {display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.75rem; border-radius: 10px;
   font-size: .98rem; line-height: 1.4; color: var(--cr-tinta); background: color-mix(in srgb, var(--estado) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--estado) 38%, transparent);}
 div.cr-lectura .cr-estado svg {flex: none; color: var(--estado);}
-div.cr-lectura .cr-barra {position: relative; display: flex; gap: 3px; margin: 20px 0 6px;}
-div.cr-lectura .cr-seg {flex: 1; height: 14px; border-radius: 3px; background: var(--cr-panel-2);
+div.cr-lectura .cr-barra {position: relative; display: flex; gap: 0.1875rem; margin: 1.25rem 0 0.375rem;}
+div.cr-lectura .cr-seg {flex: 1; height: 0.875rem; border-radius: 3px; background: var(--cr-panel-2);
   box-shadow: inset 0 0 0 1px var(--cr-borde);}
 div.cr-lectura .cr-seg.on {background: var(--estado);
   box-shadow: 0 0 8px light-dark(rgba(0, 0, 0, 0), color-mix(in srgb, var(--estado) 45%, transparent));}
-div.cr-lectura .cr-umbral {position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; border-radius: 2px;
+div.cr-lectura .cr-umbral {position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -0.0625rem; border-radius: 2px;
   background: var(--cr-ambar); box-shadow: 0 0 6px var(--cr-brillo-umbral);}
 div.cr-lectura .cr-escala {position: relative; height: 20px; font-size: .8rem; color: var(--cr-tinta-3);}
 div.cr-lectura .cr-escala span {position: absolute; top: 0; white-space: nowrap;}
 div.cr-lectura .cr-escala .cr-e-umbral {color: var(--cr-ambar); transform: translateX(-50%);}
 div.cr-lectura .cr-escala .cr-e-fin {right: 0;}
-p.cr-nota {color: var(--cr-tinta-2); font-size: .94rem; line-height: 1.55; margin: 12px 2px 0;}
+p.cr-nota {color: var(--cr-tinta-2); font-size: .94rem; line-height: 1.55; margin: 0.75rem 0.125rem 0;}
 p.cr-nota b {color: var(--cr-tinta);}
 @media (min-width: 992px) {
   [data-testid="stColumn"]:has(.cr-lectura) {position: sticky; top: 4.25rem; align-self: flex-start;}
 }
 
 /* Rótulos de grupo, avisos, fichas y pasos */
-p.cr-rotulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1.02rem; color: var(--cr-tinta); margin: 0 0 2px;}
-div.cr-aviso {display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px;
+p.cr-rotulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1.02rem; color: var(--cr-tinta); margin: 0 0 0.125rem;}
+div.cr-aviso {display: flex; gap: 0.625rem; align-items: flex-start; padding: 0.75rem 0.875rem; border-radius: 12px;
   background: var(--cr-panel); border: 1px solid var(--cr-borde); color: var(--cr-tinta-2); font-size: .9rem; line-height: 1.5;}
-div.cr-aviso svg {flex: none; margin-top: 1px; color: var(--cr-ambar);}
-div.cr-fichas {display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin: 4px 0 8px;}
-div.cr-fichas .cr-ficha {padding: 18px 20px; background: var(--cr-panel); border: 1px solid var(--cr-borde); border-radius: 14px;}
+div.cr-aviso svg {flex: none; margin-top: 0.0625rem; color: var(--cr-ambar);}
+div.cr-fichas {display: grid; grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr)); gap: 0.875rem; margin: 0.25rem 0 0.5rem;}
+div.cr-fichas .cr-ficha {padding: 1.125rem 1.25rem; background: var(--cr-panel); border: 1px solid var(--cr-borde); border-radius: 14px;}
 div.cr-fichas .cr-ficha-titulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1.15rem; color: var(--cr-tinta);
-  margin: 0 0 8px; padding: 0;}
+  margin: 0 0 0.5rem; padding: 0;}
 div.cr-fichas p {color: var(--cr-tinta-2); font-size: .96rem; line-height: 1.55; margin: 0;}
 div.cr-fichas p b {color: var(--cr-tinta);}
-ol.cr-pasos {list-style: none; counter-reset: paso; display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
-  gap: 10px; padding: 0; margin: 6px 0 18px;}
-ol.cr-pasos li {counter-increment: paso; margin: 0; padding: 14px 14px 13px; border: 1px solid var(--cr-borde);
+ol.cr-pasos {list-style: none; counter-reset: paso; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.625rem; padding: 0; margin: 0.375rem 0 1.125rem;}
+ol.cr-pasos li {counter-increment: paso; margin: 0; padding: 0.875rem 0.875rem 0.8125rem; border: 1px solid var(--cr-borde);
   border-radius: 12px; background: var(--cr-panel);}
 ol.cr-pasos li::before {content: counter(paso); display: block; font-family: var(--cr-cifras); font-weight: 700;
-  font-size: 1.5rem; line-height: 1; color: var(--cr-cian); margin-bottom: 8px;}
-ol.cr-pasos strong {display: block; color: var(--cr-tinta); font-size: 1rem; margin-bottom: 4px;}
+  font-size: 1.5rem; line-height: 1; color: var(--cr-cian); margin-bottom: 0.5rem;}
+ol.cr-pasos strong {display: block; color: var(--cr-tinta); font-size: 1rem; margin-bottom: 0.25rem;}
 ol.cr-pasos span {display: block; color: var(--cr-tinta-2); font-size: .88rem; line-height: 1.45;}
 
 /* Barra lateral */
-div.cr-side .cr-side-marca {display: flex; align-items: center; gap: 10px; margin: 0 0 6px; color: var(--cr-tinta);
+div.cr-side .cr-side-marca {display: flex; align-items: center; gap: 0.625rem; margin: 0 0 0.375rem; color: var(--cr-tinta);
   font-family: var(--cr-cifras); font-weight: 700; font-size: 1.4rem; font-variation-settings: "wdth" 115;}
 div.cr-side .cr-side-marca svg {color: var(--cr-verde); flex: none;}
-div.cr-side p {font-size: .9rem; line-height: 1.5; color: var(--cr-tinta-2); margin: 0 0 4px;}
+div.cr-side p {font-size: .9rem; line-height: 1.5; color: var(--cr-tinta-2); margin: 0 0 0.25rem;}
 div.cr-side .cr-side-titulo {font-family: var(--cr-cifras); font-weight: 600; font-size: 1rem; color: var(--cr-tinta);
-  margin: 22px 0 6px; padding: 0;}
+  margin: 1.375rem 0 0.375rem; padding: 0;}
 div.cr-side dl {margin: 0; padding: 0;}
-div.cr-side dl > div {display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 0;
+div.cr-side dl > div {display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.4375rem 0;
   margin: 0; border-bottom: 1px solid var(--cr-borde);}
 div.cr-side dt {font-size: .86rem; color: var(--cr-tinta-2); margin: 0; font-weight: 400;}
 div.cr-side dd {margin: 0; padding: 0; font-family: var(--cr-cifras); font-size: .95rem; color: var(--cr-tinta); text-align: right; font-variant-numeric: tabular-nums;}
 div.cr-side ul {margin: 0; padding: 0 0 0 1.05rem;}
-div.cr-side li {font-size: .9rem; color: var(--cr-tinta); margin: 3px 0; padding: 0;}
-div.cr-side p.cr-side-aviso {margin-top: 20px; padding: 10px 12px; border-radius: 10px; background: var(--cr-panel);
+div.cr-side li {font-size: .9rem; color: var(--cr-tinta); margin: 0.1875rem 0; padding: 0;}
+div.cr-side p.cr-side-aviso {margin-top: 1.25rem; padding: 0.625rem 0.75rem; border-radius: 10px; background: var(--cr-panel);
   border: 1px solid var(--cr-borde); font-size: .84rem;}
+
+/* En pantallas grandes la barra lateral crece con la escala para que su texto no se parta */
+@media (min-width: 1700px) {
+  [data-testid="stSidebar"][data-collapsed="false"] {width: 19rem !important; min-width: 19rem !important;
+    max-width: 19rem !important;}
+}
+
+.st-key-escala_pantalla {display: none !important;}
 
 /* Gráficos dentro de una tarjeta */
 [data-testid="stPlotlyChart"] {background: var(--cr-panel); border: 1px solid var(--cr-borde); border-radius: 14px; overflow: hidden;}
@@ -247,7 +259,7 @@ div.cr-side p.cr-side-aviso {margin-top: 20px; padding: 10px 12px; border-radius
 [data-testid="stThemeSwitcher"] + [data-testid="stMainMenuDivider"] {display: none !important;}
 
 /* Pestañas */
-[data-testid="stTabs"] [data-baseweb="tab-list"] {gap: 4px;}
+[data-testid="stTabs"] [data-baseweb="tab-list"] {gap: 0.25rem;}
 [data-testid="stTabs"] button[data-baseweb="tab"] p {font-size: 1rem; font-weight: 600;}
 
 /* Respuesta al presionar (botones) */
@@ -256,7 +268,7 @@ div.cr-side p.cr-side-aviso {margin-top: 20px; padding: 10px 12px; border-radius
 [data-testid^="stBaseButton"]:active {transform: scale(0.97);}
 
 @media (max-width: 640px) {
-  section.cr-hero {padding: 18px 18px 16px;}
+  section.cr-hero {padding: 1.125rem 1.125rem 1rem;}
   section.cr-hero .cr-traza {stroke-width: 6;}
   section.cr-hero .cr-onda {stroke-width: 3;}
   div.cr-canales .cr-canal-valor {font-size: 1.9rem;}
@@ -350,7 +362,7 @@ def estilo(fig, alto=340, leyenda=True, titulo=None):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         separators=",.",
-        font=dict(family=FUENTE_CIFRAS, color=TINTA_2, size=13),
+        font=dict(family=FUENTE_CIFRAS, color=TINTA_2, size=14),
         showlegend=leyenda,
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, title=None,
                     font=dict(color=TINTA_2), bgcolor="rgba(0,0,0,0)"),
@@ -367,7 +379,36 @@ def estilo(fig, alto=340, leyenda=True, titulo=None):
     return fig
 
 
+def escalar_figura(fig, s):
+    """Agranda letras, márgenes y alto de una figura por el factor de escala de la pantalla."""
+    def r(v):
+        return round(v * s, 1)
+    L = fig.layout
+    fig.update_layout(height=round((L.height or 340) * s), font_size=r(L.font.size or 14))
+    if L.title.font.size:
+        fig.update_layout(title_font_size=r(L.title.font.size))
+    if L.hoverlabel.font.size:
+        fig.update_layout(hoverlabel_font_size=r(L.hoverlabel.font.size))
+    for lado in ("l", "r", "t", "b"):
+        if getattr(L.margin, lado) is not None:
+            setattr(L.margin, lado, round(getattr(L.margin, lado) * s))
+    for nota in L.annotations:
+        if nota.font.size:
+            nota.font.size = r(nota.font.size)
+    for eje in list(fig.select_xaxes()) + list(fig.select_yaxes()):
+        if eje.tickfont.size:
+            eje.tickfont.size = r(eje.tickfont.size)
+        if eje.title.font.size:
+            eje.title.font.size = r(eje.title.font.size)
+    for traza in fig.data:
+        if getattr(traza, "textfont", None) is not None and traza.textfont.size:
+            traza.textfont.size = r(traza.textfont.size)
+    return fig
+
+
 def mostrar(fig):
+    if ESCALA > 1:
+        escalar_figura(fig, ESCALA)
     st.plotly_chart(fig, theme=None, config={"displaylogo": False})
 
 
@@ -522,7 +563,13 @@ with st.sidebar:
 with st.container(horizontal_alignment="right"):
     MODO_OSCURO = st.toggle(":material/dark_mode: Modo oscuro", key="oscuro", bind="query-params",
                             help="Cambia entre el tema claro (por defecto) y el oscuro.")
+    # Escala de la pantalla (base tipográfica / 16 px), la escribe el navegador; ver ESCALA_PANTALLA
+    st.text_input("Escala de pantalla", key="escala_pantalla", label_visibility="collapsed")
 
+try:
+    ESCALA = min(2.0, max(1.0, float(st.session_state.get("escala_pantalla") or 1)))
+except ValueError:
+    ESCALA = 1.0
 primera_vez = not st.session_state.get("_intro_vista", False)
 st.session_state["_intro_vista"] = True
 mt = PRUEBA["metricas"]["tamizaje"]
@@ -1106,3 +1153,35 @@ PUENTE_TEMA = """
 </script>
 """
 st.html(PUENTE_TEMA.replace("__MODO__", "oscuro" if MODO_OSCURO else "claro"), unsafe_allow_javascript=True)
+
+# ---------------------------------------------------------------------------
+# Escala de pantalla. El CSS agranda la base tipográfica en monitores grandes y
+# televisores, pero Plotly dibuja en píxeles. El navegador mide la escala (base / 16 px)
+# y la escribe en el campo oculto "escala_pantalla"; Python la usa en mostrar() para
+# agrandar letras y alto de los gráficos. En pantallas normales la escala es 1 y no hace nada.
+# ---------------------------------------------------------------------------
+ESCALA_PANTALLA = r"""
+<span hidden></span>
+<script>
+(() => {
+  const informar = () => {
+    const s = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 * 20) / 20;
+    const campo = document.querySelector('.st-key-escala_pantalla input');
+    if (!campo) return;
+    const actual = parseFloat(campo.value || "1");
+    if (Math.abs(actual - s) < 0.01) return;
+    const fijar = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    fijar.call(campo, s.toFixed(2));
+    campo.dispatchEvent(new Event("input", {bubbles: true}));
+    campo.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", code: "Enter", keyCode: 13, bubbles: true}));
+  };
+  if (!window.__crEscala) {
+    window.__crEscala = true;
+    let espera;
+    window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(informar, 400); });
+  }
+  setTimeout(informar, 50);
+})();
+</script>
+"""
+st.html(ESCALA_PANTALLA, unsafe_allow_javascript=True)
