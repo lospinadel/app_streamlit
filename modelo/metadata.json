@@ -13,7 +13,7 @@
   "docente": "Dr. Hamilton Rivera Flor",
   "enlaces": {
    "app": "https://cardioriesgo-aca1-g13.streamlit.app",
-   "video": "",
+   "video": "https://youtu.be/Xlt1AW-HFD0",
    "repositorio": ""
   },
   "referencias": [
@@ -24,7 +24,7 @@
  },
  "dataset": {
   "nombre": "UCI Heart Disease (Cleveland)",
-  "fuente": "copia local del archivo UCI (datos/processed.cleveland.data)",
+  "fuente": "copia espejo en GitHub de processed.cleveland.data (UCI)",
   "url": "https://archive.ics.uci.edu/dataset/45/heart+disease",
   "n_pacientes": 303,
   "n_entrenamiento": 242,
